@@ -17,7 +17,7 @@
     "test:c4": "node --test test/c4-raw-store.test.cjs test/c4-update.test.cjs"
   },
   "dependencies": {
-    "@aephia/atlas-kit": "0.6.0-next.58",
+    "@aephia/atlas-kit": "0.7.0-next.6",
     "@solana/kit": "6.10.0",
     "@solana/web3.js": "^1.98.4",
     "@staratlas/anchor": "^0.25.1",
