@@ -1,6 +1,6 @@
 {
   "name": "my-star-atlas-c4",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Local-first Electron app for Star Atlas C4 fleet performance dashboards.",
   "author": "Aephia",
   "private": true,
