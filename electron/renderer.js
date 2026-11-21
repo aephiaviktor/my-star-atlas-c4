@@ -1757,21 +1757,27 @@ async function loadRpcUsage(utcDate = currentUtcDate()) {
 function renderUpdateState(result, error = null) {
   availableUpdate = result || null;
   const updateAvailable = Boolean(result?.updateAvailable);
+  const opensReleasePage = Boolean(result?.opensReleasePage);
+  const checkError = error?.message || error || result?.checkError;
+  const noRelease = opensReleasePage && !result.latestVersion && !checkError;
   updateButton.classList.toggle('update-available', updateAvailable);
   updateButton.title = updateAvailable
     ? `Update available: v${result.latestVersion}`
-    : error
+    : checkError
       ? 'Update check failed'
       : 'Check for updates';
-  setText(updateCurrentVersion, `v${result?.currentVersion || versionLabel.textContent || '--'}`);
-  setText(updateLatestVersion, result?.latestVersion ? `v${result.latestVersion}` : error ? 'Unavailable' : 'Checking...');
-  updateConfirmButton.disabled = !updateAvailable;
-  updateConfirmButton.textContent = updateAvailable ? `Update to v${result.latestVersion}` : 'Update';
-  setText(updateMessage, error
-    ? `Update check failed: ${error?.message || String(error)}`
-    : updateAvailable
-      ? 'A newer My Star Atlas version is available on GitHub.'
-      : 'My Star Atlas is already up to date.');
+  const currentVersion = result?.currentVersion || versionLabel.textContent;
+  setText(updateCurrentVersion, currentVersion ? `v${currentVersion}` : '--');
+  const missingVersion = checkError ? 'Unavailable' : noRelease ? 'None published' : 'Checking...';
+  setText(updateLatestVersion, result?.latestVersion ? `v${result.latestVersion}` : missingVersion);
+  updateConfirmButton.disabled = !updateAvailable && !opensReleasePage;
+  const nativeUpdateLabel = updateAvailable ? `Update to v${result.latestVersion}` : 'Update';
+  updateConfirmButton.textContent = opensReleasePage ? 'Open GitHub Releases' : nativeUpdateLabel;
+  let message = 'My Star Atlas is already up to date.';
+  if (checkError) message = `Update check failed: ${checkError}`;
+  else if (noRelease) message = 'No My Star Atlas C4 release has been published on GitHub yet.';
+  else if (updateAvailable) message = 'A newer My Star Atlas version is available on GitHub.';
+  setText(updateMessage, message);
 }
 
 async function checkForUpdates({ openModal = false } = {}) {
@@ -10797,18 +10803,19 @@ updateModal.addEventListener('click', (event) => {
 });
 
 updateConfirmButton.addEventListener('click', async () => {
-  if (!availableUpdate?.updateAvailable) return;
+  const update = availableUpdate;
+  if (!update?.updateAvailable && !update?.opensReleasePage) return;
   updateConfirmButton.disabled = true;
   updateCancelButton.disabled = true;
-  setText(updateMessage, `Downloading My Star Atlas v${availableUpdate.latestVersion}, preparing the update, and restarting...`);
+  setText(updateMessage, update.opensReleasePage
+    ? 'Opening GitHub Releases...'
+    : `Downloading My Star Atlas v${update.latestVersion}, preparing the update, and restarting...`);
   try {
     const result = await api.downloadUpdateAndRestart();
     if (result?.opened) {
-      // macOS has no in-app updater yet: the main process opened the
-      // GitHub Releases page instead of restarting. Tell the user what
-      // happened and leave the modal usable rather than stuck on
-      // "Downloading...".
-      setText(updateMessage, `Opened the GitHub Releases page. Download the latest macOS build (v${availableUpdate.latestVersion}) and reinstall to update.`);
+      setText(updateMessage, update.opensReleasePage
+        ? 'Opened GitHub Releases in your browser.'
+        : `Opened the GitHub Releases page. Download the latest macOS build (v${update.latestVersion}) and reinstall to update.`);
       updateConfirmButton.disabled = false;
       updateCancelButton.disabled = false;
     }

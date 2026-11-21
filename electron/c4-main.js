@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, Menu, dialog, shell, safeStorage } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
+const { checkForC4Updates, LATEST_RELEASE_PAGE } = require('./c4-update');
 
 // Use the actual Starbased renderer, with no legacy data services running.
 app.setName('My Star Atlas C4');
@@ -101,7 +102,11 @@ if (!app.requestSingleInstanceLock()) {
      if(!profile)return {ok:false,error:'Configure a C4 player profile'};
      return readFleet(faction,profile,options.trigger==='manual');
     });
-    handle('updates:check', () => ({ ok: true, updateAvailable: false, currentVersion: require('../package.json').version }));
+    handle('updates:check', () => checkForC4Updates(require('../package.json').version));
+    handle('updates:download-and-restart', async () => {
+      await shell.openExternal(LATEST_RELEASE_PAGE);
+      return { opened: true };
+    });
     handle('rpc-limiter:get-status', () => ({ active: false }));
     handle('diagnostic:earnings-renderer', () => ({ ok: true }));
     const miningCache=require('./c4-mining-cache').createMiningCache(snapshots);
@@ -123,7 +128,7 @@ if (!app.requestSingleInstanceLock()) {
     });
     const empty = () => ({ ok: true, rows: [], fleets: [], resources: [], days: [], events: [], trades: [], rawTransactions: [], checkedAt: new Date().toISOString() });
     for (const name of ['earnings:snapshot', 'earnings:cargo-allocation', 'marketplace:snapshot', 'marketplace:sync', 'sdu:daily', 'sdu:consumption', 'crafting:daily', 'production:daily', 'consumption:crafting', 'consumption:upgrading', 'consumption:scanning', 'consumption:cargo', 'consumption:total', 'pcr:daily', 'inventory:daily', 'optimization:scanning', 'optimization:upgrading', 'telemetry:rpc-usage-day']) handle(name, empty);
-    for (const name of ['updates:download-and-restart', 'rpc-limiter:send-settings']) handle(name, () => ({ ok: false, error: 'Not connected in the empty C4 shell' }));
+    handle('rpc-limiter:send-settings', () => ({ ok: false, error: 'Not connected in the empty C4 shell' }));
     win = new BrowserWindow({
       width: 1440, height: 920, minWidth: 1100, minHeight: 720,
       title: 'My Star Atlas C4', backgroundColor: '#101316',
