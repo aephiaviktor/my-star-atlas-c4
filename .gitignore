@@ -1,0 +1,16 @@
+node_modules/
+/runtime/
+/dist/
+
+.env
+.env.*
+!.env.example
+.npmrc
+*.log
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+*.encrypted.json

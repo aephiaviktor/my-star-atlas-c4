@@ -1,0 +1,1828 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'" />
+    <title>My Star Atlas C4</title>
+    <link rel="stylesheet" href="./renderer.css" />
+    <link rel="stylesheet" href="./c4-aepa.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="left-nav" aria-label="Primary">
+        <div class="brand-block">
+          <img class="brand-mark" src="./assets/my-star-atlas-c4.png" alt="" />
+          <div>
+            <h1>My Star Atlas C4</h1>
+            <p id="profile-label">USTUR</p>
+          </div>
+          <button id="sidebar-toggle-btn" class="sidebar-toggle" type="button" aria-label="Collapse sidebar" aria-pressed="false">&lt;</button>
+        </div>
+
+        <nav class="primary-tabs" aria-label="Sections">
+          <button class="nav-button nav-orange" type="button" data-section="fleet" aria-pressed="false">
+            <span class="nav-icon">FL</span>
+            <span>My Fleets</span>
+          </button>
+          <button class="nav-button nav-blue active" type="button" data-section="production" aria-pressed="true">
+            <span class="nav-icon">PC</span>
+            <span>Production/Consumption</span>
+          </button>
+          <button class="nav-button nav-blue" type="button" data-section="earnings" aria-pressed="false">
+            <span class="nav-icon">EA</span>
+            <span>Earnings</span>
+          </button>
+          <button class="nav-button nav-purple" type="button" data-section="optimization" aria-pressed="false">
+            <span class="nav-icon">OP</span>
+            <span>Optimization</span>
+          </button>
+          <button class="nav-button nav-lightblue" type="button" data-section="aepa" aria-pressed="false"><span class="nav-icon">AD</span><span>AEPA Data</span></button>
+          <div class="nav-subsection" id="aepa-columns" hidden><span class="nav-subsection-title">Columns</span><div id="aepa-column-list"></div></div>
+          <div class="nav-subsection" id="earnings-column-controls" aria-label="Earnings table columns">
+            <span class="nav-subsection-title">Columns</span>
+            <label><input type="checkbox" data-earnings-column="color" /> Color</label>
+            <label><input type="checkbox" data-earnings-column="ownership" /> Ownership</label>
+            <label><input type="checkbox" data-earnings-column="ships" /> Ships</label>
+            <label><input type="checkbox" data-earnings-column="requiredCrew" /> Required Crew</label>
+            <label><input type="checkbox" data-earnings-column="sduMax" checked /> SDU Max</label>
+            <label><input type="checkbox" data-earnings-column="atlasPerScan" /> Atlas / Scan</label>
+            <label><input type="checkbox" data-earnings-column="scanAttempts" /> Scan Attempts</label>
+            <label><input type="checkbox" data-earnings-column="successfulScans" /> Successful Scans</label>
+            <label><input type="checkbox" data-earnings-column="scanSuccessRate" /> Scan Success Rate</label>
+            <label><input type="checkbox" data-earnings-column="averageChance" /> Avg Chance</label>
+            <label><input type="checkbox" data-earnings-column="sduFound" checked /> SDU Found</label>
+            <label><input type="checkbox" data-earnings-column="revenue" checked /> Revenue</label>
+            <label><input type="checkbox" data-earnings-column="foodCosts" checked /> Food Cost</label>
+            <label><input type="checkbox" data-earnings-column="fuelCosts" checked /> Fuel Cost</label>
+            <label><input type="checkbox" data-earnings-column="rental" checked /> Total Rental Cost</label>
+            <label><input type="checkbox" data-earnings-column="txsCosts" checked /> Txs Cost</label>
+            <label><input type="checkbox" data-earnings-column="totalCosts" checked /> Total Costs</label>
+            <label><input type="checkbox" data-earnings-column="netProfit" checked /> Net Profit</label>
+            <label><input type="checkbox" data-earnings-column="npPerCrew" /> NP per crew</label>
+            <label><input type="checkbox" data-earnings-column="profitMargin" checked /> Profit Margin</label>
+            <label><input type="checkbox" data-earnings-column="account" /> Account</label>
+          </div>
+          <div class="nav-subsection" id="optimization-column-controls" aria-label="Optimization table columns">
+            <span class="nav-subsection-title">Columns</span>
+            <div id="optimization-column-list"><span class="activity-filter-note">Load Scanning to discover columns</span></div>
+          </div>
+        </nav>
+
+        <div class="nav-footer">
+          <button id="open-settings-btn" class="settings-launch nav-cyan" type="button">
+            <span class="nav-icon">ST</span>
+            <span class="settings-label">Settings</span>
+            <span id="settings-status-dot" class="sync-dot muted settings-status-dot" role="img" aria-label="Settings Incomplete" title="Settings Incomplete"></span>
+          </button>
+          <div class="nav-footer-status">
+            <div class="version-line">
+              <span>v<span id="version-label">0.5.0</span></span>
+              <button id="rpc-usage-btn" class="rpc-usage-launch" type="button">RPC Usage</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <header class="top-bar">
+          <div class="toolbar-tabs">
+            <div class="subtab-bar toolbar-tab-group" data-toolbar-section="aepa" role="tablist" aria-label="AEPA data views"><button class="subtab-button active" type="button" data-aepa-tab="raw">Raw data</button><button class="subtab-button" type="button" data-aepa-tab="decoded">Decoded Events</button></div>
+            <div class="subtab-bar toolbar-tab-group" data-toolbar-section="production" role="tablist" aria-label="Production and consumption views">
+              <button class="subtab-button active" type="button" data-subtab="scanning" aria-selected="true">Scanning</button>
+              <button class="subtab-button" type="button" data-subtab="mining" aria-selected="false">Mining</button>
+              <button class="subtab-button" type="button" data-subtab="crafting" aria-selected="false">Crafting</button>
+              <button class="subtab-button" type="button" data-subtab="production" aria-selected="false">Production</button>
+              <button class="subtab-button" type="button" data-subtab="consumption" aria-selected="false">Consumption</button>
+              <button class="subtab-button" type="button" data-subtab="pct-charts" aria-selected="false">PCR Charts</button>
+              <button class="subtab-button" type="button" data-subtab="inventory" aria-selected="false">Inventory</button>
+            </div>
+            <div class="subtab-bar toolbar-tab-group" data-toolbar-section="fleet" role="tablist" aria-label="Fleet views" hidden>
+              <button class="subtab-button active" type="button" aria-selected="true">My Fleets</button>
+            </div>
+            <div class="optimization-toolbar-tabs toolbar-tab-group" data-toolbar-section="optimization" aria-label="Optimization views" hidden>
+              <div class="optimization-tab-row optimization-primary-tabs" role="tablist" aria-label="Optimization categories">
+                <button class="optimization-subtab-button subtab-button active" type="button" data-optimization-subtab="scanning" aria-selected="true">Scanning</button>
+                <button class="optimization-subtab-button subtab-button" type="button" data-optimization-subtab="upgrading" aria-selected="false">Upgrading</button>
+              </div>
+              <div class="optimization-tab-row optimization-secondary-tabs" role="tablist" aria-label="Optimization views">
+                <button class="optimization-view-button subtab-button active" type="button" data-optimization-view="data" aria-selected="true">Data</button>
+                <button class="optimization-view-button subtab-button" type="button" data-optimization-view="analytics" aria-selected="false">Analytics</button>
+              </div>
+            </div>
+            <div class="subtab-bar toolbar-tab-group" data-toolbar-section="earnings" role="tablist" aria-label="Earnings views" hidden>
+              <button class="earnings-subtab-button subtab-button active" type="button" data-earnings-subtab="scanning" aria-selected="true">Scanning</button>
+              <button class="earnings-subtab-button subtab-button" type="button" data-earnings-subtab="mining" aria-selected="false">Mining</button>
+              <button class="earnings-subtab-button subtab-button" type="button" data-earnings-subtab="marketplace" aria-selected="false">Marketplace</button>
+              <button class="earnings-subtab-button subtab-button" type="button" data-earnings-subtab="cargo" aria-selected="false">Cargo</button>
+              <button class="earnings-subtab-button subtab-button" type="button" data-earnings-subtab="crafting" aria-selected="false">Crafting</button>
+              <button class="earnings-subtab-button subtab-button" type="button" data-earnings-subtab="upgrading" aria-selected="false">Upgrading</button>
+              <button class="earnings-subtab-button subtab-button" type="button" data-earnings-subtab="breakeven" aria-selected="false">Inventory Ledger</button>
+            </div>
+          </div>
+          <div class="top-actions">
+            <div class="faction-switch" role="group" aria-label="Active faction">
+              <button class="faction-button faction-mud" type="button" data-faction="MUD" aria-pressed="false">MUD</button>
+              <button class="faction-button faction-oni" type="button" data-faction="ONI" aria-pressed="false">ONI</button>
+              <button class="faction-button faction-ustur active" type="button" data-faction="USTUR" aria-pressed="true">USTUR</button>
+            </div>
+            <div class="update-action-stack">
+              <div class="top-action-row">
+                <button class="refresh-data-btn" id="refresh-data-btn" type="button" title="Refresh the visible view">Refresh data</button>
+                <button class="update-btn" id="update-btn" type="button">Update</button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="section-view active" data-section-panel="production">
+          <div class="production-panel active" data-production-panel="scanning">
+            <div class="activity-filter-bar">
+              <label class="activity-filter">
+                <span>Fleet</span>
+                <select id="scanning-fleet-filter" aria-label="Filter scanning by fleet">
+                  <option value="">All Fleets</option>
+                </select>
+              </label>
+              <span id="scanning-fleet-note" class="activity-filter-note">Last 30 days</span>
+            </div>
+
+            <div class="dashboard-grid">
+              <section class="metric-card">
+                <span class="metric-label">Daily Average</span>
+                <strong id="sdu-avg-value">--</strong>
+                <small id="sdu-avg-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">30d SDU found</span>
+                <strong id="sdu-total-value">--</strong>
+                <small id="sdu-total-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Top Fleet</span>
+                <strong id="sdu-top-fleet-value">--</strong>
+                <small id="sdu-top-fleet-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Days Active</span>
+                <strong id="sdu-days-active-value">--</strong>
+                <small id="sdu-days-active-note">Awaiting C4 data</small>
+              </section>
+            </div>
+
+            <section class="work-surface scanning-surface">
+              <div class="resource-chart-grid scanning-chart-grid">
+                <section class="resource-card">
+                  <div class="resource-card-header">
+                    <h3 class="resource-card-title">Survey Data Unit</h3>
+                    <span id="sdu-chart-total" class="resource-card-total">--</span>
+                  </div>
+                  <div id="sdu-chart-bars" class="resource-chart-bars" aria-label="Daily SDU found over the last 30 days">
+                    <div class="chart-empty">Awaiting C4 data</div>
+                  </div>
+                </section>
+              </div>
+            </section>
+
+          </div>
+
+          <div class="production-panel" data-production-panel="mining">
+            <div class="activity-filter-bar">
+              <label class="activity-filter">
+                <span>Starbase</span>
+                <select id="mining-starbase-filter" aria-label="Filter mining by starbase">
+                  <option value="">All starbases</option>
+                </select>
+              </label>
+              <label class="activity-filter">
+                <span>Fleet</span>
+                <select id="mining-fleet-filter" aria-label="Filter mining by fleet">
+                  <option value="">All Fleets</option>
+                </select>
+              </label>
+              <span id="mining-fleet-note" class="activity-filter-note">Last 30 days</span>
+            </div>
+
+            <div class="dashboard-grid">
+              <section class="metric-card">
+                <span class="metric-label">Daily Average</span>
+                <strong id="mining-avg-value">--</strong>
+                <small id="mining-avg-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">30d Raw Materials</span>
+                <strong id="mining-total-value">--</strong>
+                <small id="mining-total-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Top Material</span>
+                <strong id="mining-top-value">--</strong>
+                <small id="mining-top-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Materials</span>
+                <strong id="mining-material-count-value">--</strong>
+                <small id="mining-material-count-note">Awaiting C4 data</small>
+              </section>
+            </div>
+
+            <section class="work-surface mining-surface">
+              <div id="mining-chart-grid" class="resource-chart-grid">
+                <div class="chart-empty">Awaiting C4 data</div>
+              </div>
+            </section>
+          </div>
+
+          <div class="production-panel" data-production-panel="crafting">
+            <div class="activity-filter-bar">
+              <label class="activity-filter">
+                <span>Starbase</span>
+                <select id="crafting-starbase-filter" aria-label="Filter crafting by starbase">
+                  <option value="">All starbases</option>
+                </select>
+              </label>
+              <label class="activity-filter">
+                <span>Recipe</span>
+                <select id="crafting-recipe-filter" aria-label="Filter crafting by recipe">
+                  <option value="">All recipes</option>
+                </select>
+              </label>
+              <span id="crafting-filter-note" class="activity-filter-note">Last 30 days</span>
+            </div>
+
+            <div class="dashboard-grid">
+              <section class="metric-card">
+                <span class="metric-label">Daily Average</span>
+                <strong id="crafting-avg-value">--</strong>
+                <small id="crafting-avg-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">30d Crafted Output</span>
+                <strong id="crafting-total-value">--</strong>
+                <small id="crafting-total-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Top Recipe</span>
+                <strong id="crafting-top-value">--</strong>
+                <small id="crafting-top-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Recipes</span>
+                <strong id="crafting-count-value">--</strong>
+                <small id="crafting-count-note">Awaiting C4 data</small>
+              </section>
+            </div>
+
+            <section class="work-surface crafting-surface">
+              <div id="crafting-chart-grid" class="crafting-chart-grid">
+                <div class="chart-empty">Awaiting C4 data</div>
+              </div>
+            </section>
+          </div>
+
+          <div class="production-panel" data-production-panel="production">
+            <div class="activity-filter-bar">
+              <label class="activity-filter">
+                <span>Starbase</span>
+                <select id="production-starbase-filter" aria-label="Filter production by starbase">
+                  <option value="">All starbases</option>
+                </select>
+              </label>
+              <label class="activity-filter">
+                <span>Asset</span>
+                <select id="production-asset-filter" aria-label="Filter production by asset">
+                  <option value="">All assets</option>
+                </select>
+              </label>
+              <span id="production-filter-note" class="activity-filter-note">Last 30 days</span>
+            </div>
+
+            <div class="dashboard-grid">
+              <section class="metric-card">
+                <span class="metric-label">Daily Average</span>
+                <strong id="production-avg-value">--</strong>
+                <small id="production-avg-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">30d Production</span>
+                <strong id="production-total-value">--</strong>
+                <small id="production-total-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Top Product</span>
+                <strong id="production-top-value">--</strong>
+                <small id="production-top-note">Awaiting C4 data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Products</span>
+                <strong id="production-count-value">--</strong>
+                <small id="production-count-note">Awaiting C4 data</small>
+              </section>
+            </div>
+
+            <section class="work-surface production-surface">
+              <div id="production-chart-grid" class="crafting-chart-grid">
+                <div class="chart-empty">Awaiting C4 data</div>
+              </div>
+            </section>
+          </div>
+
+          <div class="production-panel" data-production-panel="consumption">
+            <div class="consumption-subtab-bar" role="tablist" aria-label="Consumption views">
+              <button class="consumption-subtab-button active" type="button" data-consumption-subtab="scanning" aria-selected="true">Scanning</button>
+              <button class="consumption-subtab-button" type="button" data-consumption-subtab="mining" aria-selected="false">Mining</button>
+              <button class="consumption-subtab-button" type="button" data-consumption-subtab="cargo" aria-selected="false">Cargo</button>
+              <button class="consumption-subtab-button" type="button" data-consumption-subtab="crafting" aria-selected="false">Crafting</button>
+              <button class="consumption-subtab-button" type="button" data-consumption-subtab="upgrading" aria-selected="false">Upgrading</button>
+              <button class="consumption-subtab-button" type="button" data-consumption-subtab="total" aria-selected="false">Total</button>
+            </div>
+
+            <div class="consumption-panel active" data-consumption-panel="scanning">
+              <div class="activity-filter-bar">
+                <label class="activity-filter">
+                  <span>Starbase</span>
+                  <select id="consumption-scanning-starbase-filter" aria-label="Filter scanning consumption by starbase">
+                    <option value="">All starbases</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Fleet</span>
+                  <select id="consumption-scanning-fleet-filter" aria-label="Filter scanning consumption by fleet">
+                    <option value="">All Fleets</option>
+                  </select>
+                </label>
+                <span id="consumption-scanning-filter-note" class="activity-filter-note">Last 30 days</span>
+              </div>
+
+              <div class="dashboard-grid">
+                <section class="metric-card">
+                  <span class="metric-label">Daily Average</span>
+                  <strong id="consumption-scanning-avg-value">--</strong>
+                  <small id="consumption-scanning-avg-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">30d Consumed</span>
+                  <strong id="consumption-scanning-total-value">--</strong>
+                  <small id="consumption-scanning-total-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Top Asset</span>
+                  <strong id="consumption-scanning-top-value">--</strong>
+                  <small id="consumption-scanning-top-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Assets</span>
+                  <strong id="consumption-scanning-asset-count-value">--</strong>
+                  <small id="consumption-scanning-asset-count-note">Awaiting C4 data</small>
+                </section>
+              </div>
+
+              <section class="work-surface">
+                <div id="consumption-scanning-chart-grid" class="crafting-chart-grid">
+                  <div class="chart-empty">Awaiting C4 data</div>
+                </div>
+              </section>
+            </div>
+
+            <div class="consumption-panel" data-consumption-panel="mining">
+              <div class="activity-filter-bar">
+                <label class="activity-filter">
+                  <span>Starbase</span>
+                  <select id="consumption-mining-starbase-filter" aria-label="Filter mining consumption by starbase">
+                    <option value="">All starbases</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Fleet</span>
+                  <select id="consumption-mining-fleet-filter" aria-label="Filter mining consumption by fleet">
+                    <option value="">All Fleets</option>
+                  </select>
+                </label>
+                <span id="consumption-mining-filter-note" class="activity-filter-note">Last 30 days</span>
+              </div>
+
+              <div class="dashboard-grid">
+                <section class="metric-card">
+                  <span class="metric-label">Daily Average</span>
+                  <strong id="consumption-mining-avg-value">--</strong>
+                  <small id="consumption-mining-avg-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">30d Consumed</span>
+                  <strong id="consumption-mining-total-value">--</strong>
+                  <small id="consumption-mining-total-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Top Asset</span>
+                  <strong id="consumption-mining-top-value">--</strong>
+                  <small id="consumption-mining-top-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Assets</span>
+                  <strong id="consumption-mining-asset-count-value">--</strong>
+                  <small id="consumption-mining-asset-count-note">Awaiting C4 data</small>
+                </section>
+              </div>
+
+              <section class="work-surface">
+                <div id="consumption-mining-chart-grid" class="crafting-chart-grid">
+                  <div class="chart-empty">Awaiting C4 data</div>
+                </div>
+              </section>
+            </div>
+
+            <div class="consumption-panel" data-consumption-panel="cargo">
+              <div class="activity-filter-bar">
+                <label class="activity-filter">
+                  <span>Starbase</span>
+                  <select id="consumption-cargo-starbase-filter" aria-label="Filter cargo consumption by starbase">
+                    <option value="">All starbases</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Fleet</span>
+                  <select id="consumption-cargo-fleet-filter" aria-label="Filter cargo consumption by fleet">
+                    <option value="">All Fleets</option>
+                  </select>
+                </label>
+                <span id="consumption-cargo-filter-note" class="activity-filter-note">Last 30 days</span>
+              </div>
+
+              <div class="dashboard-grid">
+                <section class="metric-card">
+                  <span class="metric-label">Daily Average</span>
+                  <strong id="consumption-cargo-avg-value">--</strong>
+                  <small id="consumption-cargo-avg-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">30d Consumed</span>
+                  <strong id="consumption-cargo-total-value">--</strong>
+                  <small id="consumption-cargo-total-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Top Asset</span>
+                  <strong id="consumption-cargo-top-value">--</strong>
+                  <small id="consumption-cargo-top-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Assets</span>
+                  <strong id="consumption-cargo-asset-count-value">--</strong>
+                  <small id="consumption-cargo-asset-count-note">Awaiting C4 data</small>
+                </section>
+              </div>
+
+              <section class="work-surface">
+                <div id="consumption-cargo-chart-grid" class="crafting-chart-grid">
+                  <div class="chart-empty">Awaiting C4 data</div>
+                </div>
+              </section>
+            </div>
+
+            <div class="consumption-panel" data-consumption-panel="crafting">
+              <div class="activity-filter-bar">
+                <label class="activity-filter">
+                  <span>Starbase</span>
+                  <select id="consumption-crafting-starbase-filter" aria-label="Filter crafting consumption by starbase">
+                    <option value="">All starbases</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Recipe</span>
+                  <select id="consumption-crafting-recipe-filter" aria-label="Filter crafting consumption by recipe">
+                    <option value="">All recipes</option>
+                  </select>
+                </label>
+                <span id="consumption-crafting-filter-note" class="activity-filter-note">Last 30 days</span>
+              </div>
+
+              <div class="dashboard-grid">
+                <section class="metric-card">
+                  <span class="metric-label">Daily Average</span>
+                  <strong id="consumption-crafting-avg-value">--</strong>
+                  <small id="consumption-crafting-avg-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">30d Consumed</span>
+                  <strong id="consumption-crafting-total-value">--</strong>
+                  <small id="consumption-crafting-total-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Top Ingredient</span>
+                  <strong id="consumption-crafting-top-value">--</strong>
+                  <small id="consumption-crafting-top-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Ingredients</span>
+                  <strong id="consumption-crafting-asset-count-value">--</strong>
+                  <small id="consumption-crafting-asset-count-note">Awaiting C4 data</small>
+                </section>
+              </div>
+
+              <section class="work-surface">
+                <div id="consumption-crafting-chart-grid" class="crafting-chart-grid">
+                  <div class="chart-empty">Awaiting C4 data</div>
+                </div>
+              </section>
+            </div>
+
+            <div class="consumption-panel" data-consumption-panel="upgrading">
+              <div class="activity-filter-bar">
+                <label class="activity-filter">
+                  <span>Starbase</span>
+                  <select id="consumption-upgrading-starbase-filter" aria-label="Filter upgrading consumption by starbase">
+                    <option value="">All starbases</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Component</span>
+                  <select id="consumption-upgrading-component-filter" aria-label="Filter upgrading consumption by component">
+                    <option value="">All components</option>
+                  </select>
+                </label>
+                <span id="consumption-upgrading-filter-note" class="activity-filter-note">Last 30 days</span>
+              </div>
+
+              <div class="dashboard-grid">
+                <section class="metric-card">
+                  <span class="metric-label">Daily Average</span>
+                  <strong id="consumption-upgrading-avg-value">--</strong>
+                  <small id="consumption-upgrading-avg-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">30d Consumed</span>
+                  <strong id="consumption-upgrading-total-value">--</strong>
+                  <small id="consumption-upgrading-total-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Top Component</span>
+                  <strong id="consumption-upgrading-top-value">--</strong>
+                  <small id="consumption-upgrading-top-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Components</span>
+                  <strong id="consumption-upgrading-asset-count-value">--</strong>
+                  <small id="consumption-upgrading-asset-count-note">Awaiting C4 data</small>
+                </section>
+              </div>
+
+              <section class="work-surface">
+                <div id="consumption-upgrading-chart-grid" class="crafting-chart-grid">
+                  <div class="chart-empty">Awaiting C4 data</div>
+                </div>
+              </section>
+            </div>
+
+            <div class="consumption-panel" data-consumption-panel="total">
+              <div class="activity-filter-bar">
+                <label class="activity-filter">
+                  <span>Starbase</span>
+                  <select id="consumption-total-starbase-filter" aria-label="Filter total consumption by starbase">
+                    <option value="">All starbases</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Asset</span>
+                  <select id="consumption-total-asset-filter" aria-label="Filter total consumption by asset">
+                    <option value="">All assets</option>
+                  </select>
+                </label>
+                <span id="consumption-total-filter-note" class="activity-filter-note">Last 30 days</span>
+              </div>
+
+              <div class="dashboard-grid">
+                <section class="metric-card">
+                  <span class="metric-label">Daily Average</span>
+                  <strong id="consumption-total-avg-value">--</strong>
+                  <small id="consumption-total-avg-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">30d Consumed</span>
+                  <strong id="consumption-total-total-value">--</strong>
+                  <small id="consumption-total-total-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Top Category</span>
+                  <strong id="consumption-total-top-value">--</strong>
+                  <small id="consumption-total-top-note">Awaiting C4 data</small>
+                </section>
+                <section class="metric-card">
+                  <span class="metric-label">Categories</span>
+                  <strong id="consumption-total-asset-count-value">--</strong>
+                  <small id="consumption-total-asset-count-note">Awaiting C4 data</small>
+                </section>
+              </div>
+
+              <section class="work-surface">
+                <div id="consumption-total-chart-grid" class="crafting-chart-grid">
+                  <div class="chart-empty">Awaiting C4 data</div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <div class="production-panel" data-production-panel="pct-charts">
+            <div class="pcr-toolbar">
+              <span class="pcr-toolbar-label">Production / Consumption</span>
+              <span id="pcr-faction-note" class="pcr-toolbar-note">Last 30 days · production ÷ consumption</span>
+            </div>
+
+            <div id="pcr-chart-grid" class="pcr-chart-grid">
+              <section class="pcr-chart-card" data-pcr-category="raw-material">
+                <header class="pcr-chart-header">
+                  <h3 class="pcr-chart-title">Raw Material</h3>
+                  <span id="pcr-raw-material-summary" class="pcr-chart-summary">--</span>
+                </header>
+                <div id="pcr-raw-material-svg-wrap" class="pcr-chart-svg-wrap" aria-label="Raw Material PCR over the last 30 days">
+                  <div class="chart-empty">Awaiting C4 data</div>
+                </div>
+                <div id="pcr-raw-material-legend" class="pcr-chart-legend"></div>
+              </section>
+
+              <section class="pcr-chart-card" data-pcr-category="consumable">
+                <header class="pcr-chart-header">
+                  <h3 class="pcr-chart-title">Consumable</h3>
+                  <span id="pcr-consumable-summary" class="pcr-chart-summary">--</span>
+                </header>
+                <div id="pcr-consumable-svg-wrap" class="pcr-chart-svg-wrap" aria-label="Consumable PCR over the last 30 days">
+                  <div class="chart-empty">Awaiting C4 data</div>
+                </div>
+                <div id="pcr-consumable-legend" class="pcr-chart-legend"></div>
+              </section>
+
+              <section class="pcr-chart-card" data-pcr-category="compound-material">
+                <header class="pcr-chart-header">
+                  <h3 class="pcr-chart-title">Compound Material</h3>
+                  <span id="pcr-compound-material-summary" class="pcr-chart-summary">--</span>
+                </header>
+                <div id="pcr-compound-material-svg-wrap" class="pcr-chart-svg-wrap" aria-label="Compound Material PCR over the last 30 days">
+                  <div class="chart-empty">Awaiting C4 data</div>
+                </div>
+                <div id="pcr-compound-material-legend" class="pcr-chart-legend"></div>
+              </section>
+
+              <section class="pcr-chart-card" data-pcr-category="component">
+                <header class="pcr-chart-header">
+                  <h3 class="pcr-chart-title">Component</h3>
+                  <span id="pcr-component-summary" class="pcr-chart-summary">--</span>
+                </header>
+                <div id="pcr-component-svg-wrap" class="pcr-chart-svg-wrap" aria-label="Component PCR over the last 30 days">
+                  <div class="chart-empty">Awaiting C4 data</div>
+                </div>
+                <div id="pcr-component-legend" class="pcr-chart-legend"></div>
+              </section>
+
+              <section class="pcr-chart-card" data-pcr-category="data">
+                <header class="pcr-chart-header">
+                  <h3 class="pcr-chart-title">Data</h3>
+                  <span id="pcr-data-summary" class="pcr-chart-summary">--</span>
+                </header>
+                <div id="pcr-data-svg-wrap" class="pcr-chart-svg-wrap" aria-label="Data PCR over the last 30 days">
+                  <div class="chart-empty">Awaiting C4 data</div>
+                </div>
+                <div id="pcr-data-legend" class="pcr-chart-legend"></div>
+              </section>
+            </div>
+          </div>
+
+          <div class="production-panel" data-production-panel="inventory">
+            <div class="inv-toolbar">
+              <label class="inv-starbase-filter">
+                <span>Starbase</span>
+                <select id="inv-starbase-select" aria-label="Starbase filter">
+                  <option value="__all__">All starbases (faction aggregate)</option>
+                </select>
+              </label>
+              <div id="inv-faction-note" class="inv-faction-note">Last 30 days · inventory at starbase</div>
+              <div id="inv-debug-strip" class="inv-debug-strip">wide card: not yet rendered</div>
+            </div>
+
+            <div class="inv-line-grid">
+              <section class="inv-chart-card inv-chart-card-small" data-inv-category="ammunition">
+                <div class="inv-chart-header">
+                  <h3>Ammunition</h3>
+                  <span id="inv-ammunition-summary" class="inv-chart-summary">--</span>
+                </div>
+                <div id="inv-ammunition-svg-wrap" class="inv-chart-svg-wrap"></div>
+              </section>
+              <section class="inv-chart-card inv-chart-card-small" data-inv-category="food">
+                <div class="inv-chart-header">
+                  <h3>Food</h3>
+                  <span id="inv-food-summary" class="inv-chart-summary">--</span>
+                </div>
+                <div id="inv-food-svg-wrap" class="inv-chart-svg-wrap"></div>
+              </section>
+              <section class="inv-chart-card inv-chart-card-small" data-inv-category="fuel">
+                <div class="inv-chart-header">
+                  <h3>Fuel</h3>
+                  <span id="inv-fuel-summary" class="inv-chart-summary">--</span>
+                </div>
+                <div id="inv-fuel-svg-wrap" class="inv-chart-svg-wrap"></div>
+              </section>
+              <section class="inv-chart-card inv-chart-card-wide" data-inv-category="all-assets">
+                <div class="inv-chart-header">
+                  <h3>Other Assets</h3>
+                  <span id="inv-all-assets-summary" class="inv-chart-summary">--</span>
+                </div>
+                <div id="inv-all-assets-svg-wrap" class="inv-chart-svg-wrap"></div>
+                <div id="inv-all-assets-legend" class="inv-chart-legend"></div>
+              </section>
+            </div>
+
+            <div class="inv-bar-section">
+              <div class="inv-bar-section-header">
+                <h3>Average daily change</h3>
+                <div class="inv-method-toggle" role="group" aria-label="Averaging method">
+                  <button id="inv-method-regression" class="inv-method-button active" type="button" data-inv-method="regression">Linear regression</button>
+                  <button id="inv-method-two-point" class="inv-method-button" type="button" data-inv-method="two-point">Two-point</button>
+                </div>
+              </div>
+              <div class="inv-bar-grid">
+                <div class="inv-bar-column" data-inv-bar-column="consumables">
+                  <h4>Consumables</h4>
+                  <div id="inv-bars-consumables" class="inv-bar-list"></div>
+                </div>
+                <div class="inv-bar-column" data-inv-bar-column="other">
+                  <h4>Other assets</h4>
+                  <div id="inv-bars-other" class="inv-bar-list"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-view" data-section-panel="fleet">
+          <div class="fleet-toolbar">
+            <div class="fleet-toolbar-group">
+              <label class="fleet-search">
+                <span>Search</span>
+                <input id="fleet-search-input" type="search" autocomplete="off" spellcheck="false" />
+              </label>
+            </div>
+          </div>
+
+          <section class="work-surface fleet-surface">
+            <div id="fleet-sync-status" class="fleet-sync-status" role="status">Awaiting blockchain sync</div>
+            <div class="fleet-table-wrap">
+              <table class="fleet-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Fleet</th>
+                    <th scope="col">Ownership</th>
+                    <th scope="col">State</th>
+                    <th scope="col">Account</th>
+                  </tr>
+                </thead>
+                <tbody id="fleet-table-body">
+                  <tr class="empty-row">
+                    <td colspan="4">No blockchain fleet data loaded</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="section-view" data-section-panel="optimization">
+          <div class="optimization-panel active" data-optimization-view-panel="data" data-optimization-panel="scanning">
+          <section class="work-surface optimization-surface">
+            <div class="activity-filter-bar optimization-filter-bar">
+              <label class="activity-filter">From
+                <input id="optimization-start-filter" type="date" value="2026-07-25" />
+              </label>
+              <label class="activity-filter">To
+                <input id="optimization-stop-filter" type="date" />
+              </label>
+              <label class="activity-filter">Fleet
+                <select id="optimization-fleet-filter"><option value="__all__">All fleets</option></select>
+              </label>
+              <label class="activity-filter">Experiment
+                <select id="optimization-experiment-filter"><option value="__all__">All experiments</option></select>
+              </label>
+              <label class="activity-filter">Event
+                <select id="optimization-event-filter"><option value="__all__">All events</option><option value="transaction">transaction</option><option value="scan_result">scan_result</option><option value="optimization_progress">optimization_progress</option></select>
+              </label>
+              <label class="activity-filter">Operation
+                <select id="optimization-operation-filter"><option value="__all__">All operations</option></select>
+              </label>
+              <label class="activity-filter">Optimization parameter
+                <select id="optimization-parameter-filter"><option value="__all__">All optimization parameters</option></select>
+              </label>
+            </div>
+            <div class="fleet-sync-status" id="optimization-sync-status">Awaiting optimization data</div>
+            <div class="fleet-table-wrap">
+              <table class="fleet-table optimization-table">
+                <thead><tr id="optimization-table-head"><th>Time</th></tr></thead>
+                <tbody id="optimization-table-body"><tr class="empty-row"><td>Awaiting optimization data</td></tr></tbody>
+              </table>
+            </div>
+            <button id="optimization-load-more" class="secondary-btn" type="button" hidden>Load more</button>
+          </section>
+          </div>
+          <div class="optimization-panel" data-optimization-view-panel="data" data-optimization-panel="upgrading">
+            <section class="work-surface optimization-surface">
+              <div class="activity-filter-bar optimization-filter-bar">
+                <label class="activity-filter">From <input id="optimization-upgrading-start-filter" type="date" value="2026-07-25" /></label>
+                <label class="activity-filter">To <input id="optimization-upgrading-stop-filter" type="date" /></label>
+              </div>
+              <div class="fleet-sync-status" id="optimization-upgrading-sync-status">Awaiting upgrading optimization data</div>
+              <div class="fleet-table-wrap">
+                <table class="fleet-table optimization-table">
+                  <thead><tr id="optimization-upgrading-table-head"><th>Date and Time</th></tr></thead>
+                  <tbody id="optimization-upgrading-table-body"><tr class="empty-row"><td>Awaiting upgrading optimization data</td></tr></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+          <div class="optimization-panel" data-optimization-view-panel="analytics" data-optimization-panel="scanning">
+            <section class="work-surface optimization-surface optimization-analytics-surface">
+              <div class="activity-filter-bar optimization-filter-bar optimization-analytics-filter-bar">
+                <div class="activity-filter optimization-analytics-calendar-filter">Start date
+                  <details id="optimization-analytics-date-picker" class="optimization-calendar-picker">
+                    <summary id="optimization-analytics-date-summary">Latest optimization date</summary>
+                    <div class="optimization-calendar-popover">
+                      <div class="optimization-calendar-header">
+                        <button id="optimization-analytics-calendar-previous" type="button" aria-label="Previous month">‹</button>
+                        <strong id="optimization-analytics-calendar-month"></strong>
+                        <button id="optimization-analytics-calendar-next" type="button" aria-label="Next month">›</button>
+                      </div>
+                      <div class="optimization-calendar-weekdays" aria-hidden="true"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
+                      <div id="optimization-analytics-date-calendar" class="optimization-calendar-grid" role="grid" aria-label="Experiment start dates"></div>
+                      <div class="optimization-calendar-legend"><span><i class="optimization-calendar-dot optimization-calendar-dot--optimization"></i>Optimization</span><span><i class="optimization-calendar-dot optimization-calendar-dot--recording"></i>Record only</span></div>
+                    </div>
+                  </details>
+                </div>
+                <label class="activity-filter optimization-analytics-only-filter"><input id="optimization-analytics-only-optimization" type="checkbox" checked /> Only Optimization data</label>
+                <label class="activity-filter">Experiment
+                  <select id="optimization-analytics-experiment"><option value="__latest__">Latest experiment</option></select>
+                </label>
+                <label class="activity-filter">Chart metric
+                  <select id="optimization-analytics-metric"><option value="averageScanChance">Average Scan Chance</option><option value="sduPerDay">SDU / day</option><option value="sduPerScan">SDU / scan</option><option value="scanSuccessRate">Scan success rate</option></select>
+                </label>
+              </div>
+              <div class="fleet-sync-status" id="optimization-analytics-status">Load scanning optimization data to calculate analytics</div>
+              <div class="optimization-analytics-grid">
+                <section class="optimization-analytics-card optimization-analytics-summary-card">
+                  <h3>Experiment summary</h3>
+                  <div id="optimization-analytics-summary" class="optimization-analytics-metrics"></div>
+                  <div id="optimization-analytics-economics" class="optimization-analytics-economics"></div>
+                </section>
+                <section class="optimization-analytics-card">
+                  <h3>Value distribution</h3>
+                  <p class="optimization-analytics-note">Individual scan outcomes reveal spread and lucky clusters; the larger marker is the group mean.</p>
+                  <div id="optimization-analytics-value-chart" class="optimization-analytics-chart"></div>
+                </section>
+                <section class="optimization-analytics-card">
+                  <h3>Sector clusters</h3>
+                  <p class="optimization-analytics-note">Scan sectors are colored by tested parameter value.</p>
+                  <div id="optimization-analytics-sector-chart" class="optimization-analytics-chart"></div>
+                </section>
+                <section class="optimization-analytics-card optimization-analytics-ranking-card">
+                  <div class="optimization-analytics-ranking-header">
+                    <h3>Block ranking</h3>
+                    <label class="activity-filter optimization-analytics-parameter-filter">Parameter
+                      <select id="optimization-analytics-parameter"><option value="__all__">All Parameters</option></select>
+                    </label>
+                  </div>
+                  <div class="fleet-table-wrap optimization-analytics-ranking-wrap">
+                    <table class="fleet-table optimization-table optimization-analytics-ranking">
+                      <thead id="optimization-analytics-ranking-head"><tr><th data-optimization-analytics-sort="blockIndex" data-label="Block">Block</th><th data-optimization-analytics-sort="parameter" data-label="Parameter">Parameter</th><th data-optimization-analytics-sort="value" data-label="Value">Value</th><th data-optimization-analytics-sort="scans" data-label="Scans">Scans</th><th data-optimization-analytics-sort="averageScanChance" data-label="Avg Scan Chance">Avg Scan Chance</th><th data-optimization-analytics-sort="sduPerDay" data-label="SDU / day">SDU / day</th><th data-optimization-analytics-sort="netAtlasPerDay" data-label="Net ATLAS / day">Net ATLAS / day</th><th data-optimization-analytics-sort="pausedSeconds" data-label="Paused">Paused</th><th data-optimization-analytics-sort="movementSeconds" data-label="Movement">Movement</th><th data-optimization-analytics-sort="opportunityCostMovementSeconds" data-label="Opportunity Cost">Opportunity Cost</th><th data-optimization-analytics-sort="elapsedSeconds" data-label="Elapsed">Elapsed</th></tr></thead>
+                      <tbody id="optimization-analytics-ranking"><tr class="empty-row"><td colspan="11">Awaiting scan results</td></tr></tbody>
+                    </table>
+                  </div>
+                </section>
+                <details class="earnings-metric-guide optimization-scanning-page-guide" open>
+                  <summary>How to read this page</summary>
+                  <div class="earnings-metric-guide-list">
+                    <article class="earnings-metric-guide-item">
+                      <h4>Experiment summary</h4>
+                      <p><strong>Daily rates: </strong>SDU / day and Net ATLAS / day are 24-hour equivalents based on active experimental time.</p>
+                      <p>Shows the selected scanning experiment, its available analyzable scan-result records, and the experiment-level economics derived from those rows.</p>
+                      <p class="earnings-metric-guide-formula"><strong>Formula: </strong>Selected experiment rows, optionally limited to Optimization data, grouped by the experiment ID and selected start date.</p>
+                      <p><strong>Interpretation: </strong>Use this as the data-quality check before trusting the charts. Runtime progress can be higher than analyzable rows when older scan results were not stored in telemetry.</p>
+                    </article>
+                    <article class="earnings-metric-guide-item">
+                      <h4>Value distribution</h4>
+                      <p>Shows individual scan outcomes for each tested parameter value; the larger marker is the group mean.</p>
+                      <p class="earnings-metric-guide-formula"><strong>Formula: </strong>Each scan result is plotted by selected chart metric, grouped by the active optimization parameter value.</p>
+                      <p><strong>Interpretation: </strong>Look for separation between group means, but also check the spread. A lucky cluster can make a weak setting look better than it is.</p>
+                    </article>
+                    <article class="earnings-metric-guide-item">
+                      <h4>Sector clusters</h4>
+                      <p>Maps the scanned sectors and colors them by the tested parameter value.</p>
+                      <p class="earnings-metric-guide-formula"><strong>Formula: </strong>Scan-result rows are placed by sector coordinates and grouped by the same parameter buckets used in the ranking.</p>
+                      <p><strong>Interpretation: </strong>Use this to spot location bias. If one parameter mostly ran in a better sector cluster, compare results cautiously.</p>
+                    </article>
+                    <article class="earnings-metric-guide-item">
+                      <h4>Block ranking</h4>
+                      <p>Ranks tested optimization blocks by the selected table parameter and exposes the main scan, value, time, movement, and net ATLAS metrics.</p>
+                      <p class="earnings-metric-guide-formula"><strong>Formula: </strong>Rows are grouped into contiguous experiment blocks by parameter and value, then metrics are aggregated per block.</p>
+                      <p><strong>Interpretation: </strong>The best block is the strongest candidate setting, but prefer settings with enough scans and reasonable elapsed time over tiny samples.</p>
+                    </article>
+                  </div>
+                </details>
+              </div>
+            </section>
+          </div>
+          <div class="optimization-panel" data-optimization-view-panel="analytics" data-optimization-panel="upgrading">
+            <section class="work-surface optimization-surface optimization-analytics-surface">
+              <div class="optimization-analytics-grid">
+                <section class="optimization-analytics-card optimization-analytics-summary-card">
+                  <h3>Upgrading LP analysis</h3>
+                  <p id="optimization-upgrading-analytics-status" class="optimization-analytics-note">Awaiting upgrading history</p>
+                </section>
+                <section class="optimization-analytics-card optimization-upgrading-v1-card">
+                  <h3>Selection Uplift</h3>
+                  <div id="optimization-upgrading-selection-v1" class="optimization-analytics-chart optimization-upgrading-v1-chart">Awaiting matched completion-cohort evidence</div>
+                </section>
+                <section class="optimization-analytics-card optimization-upgrading-v1-card">
+                  <div class="toolkit-capacity-heading"><h3>UTC-Calendar Crew-State Utilization</h3><button id="upgrading-net-capacity" class="earnings-per-unit-btn" type="button" aria-pressed="false">Net capacity</button></div>
+                  <div id="optimization-upgrading-utilization-v1" class="optimization-analytics-chart optimization-upgrading-v1-chart">Awaiting UTC-calendar crew-state evidence</div>
+                </section>
+                <section class="optimization-analytics-card optimization-upgrading-v1-card">
+                  <h3>Estimated Utilization Loss</h3>
+                  <div id="optimization-upgrading-loss" class="optimization-analytics-chart optimization-upgrading-v1-chart">Awaiting utilization valuation</div>
+                </section>
+                <section class="optimization-analytics-card optimization-upgrading-v1-card">
+                  <h3>Estimated Capacity Management Impact</h3>
+                  <div id="optimization-upgrading-management" class="optimization-analytics-chart optimization-upgrading-v1-chart">Awaiting management valuation</div>
+                </section>
+                <section class="optimization-analytics-card optimization-analytics-summary-card">
+                  <h3>Toolkit Downtime</h3>
+                  <div class="optimization-toolkit-table-wrap">
+                    <table class="fleet-table"><thead><tr><th scope="col">UTC Date</th><th scope="col">Starbase</th><th scope="col">Covered</th><th scope="col">Toolkit Downtime</th><th scope="col">Unknown</th><th scope="col">Estimated Total</th><th scope="col">Evidence</th></tr></thead>
+                      <tbody id="optimization-upgrading-toolkit-body"><tr><td colspan="7">Awaiting Toolkit observations</td></tr></tbody>
+                    </table>
+                  </div>
+                </section>
+                <section class="optimization-analytics-card optimization-upgrading-primary-chart-card optimization-upgrading-comparison-chart-card">
+                  <h3>Faction LP redemption vs player LP per upgrading crew</h3>
+                  <div id="optimization-upgrading-redemption-chart" class="optimization-analytics-chart optimization-upgrading-tall-chart"></div>
+                </section>
+                <section class="optimization-analytics-card optimization-upgrading-comparison-chart-card">
+                  <h3>ATLAS / LP vs LP / average crew</h3>
+                  <div id="optimization-upgrading-lp-per-crew-by-rate-chart" class="optimization-analytics-chart optimization-upgrading-tall-chart"></div>
+                </section>
+                <section class="optimization-analytics-card optimization-upgrading-comparison-chart-card">
+                  <h3>ATLAS / LP vs component cost / average crew</h3>
+                  <div id="optimization-upgrading-component-cost-by-rate-chart" class="optimization-analytics-chart optimization-upgrading-tall-chart"></div>
+                </section>
+                <section class="optimization-analytics-card optimization-upgrading-comparison-chart-card">
+                  <h3>Legacy 24h operational comparison — ATLAS / LP vs actual − neutral baseline uplift / average crew</h3>
+                  <div id="optimization-upgrading-uplift-by-rate-chart" class="optimization-analytics-chart optimization-upgrading-tall-chart"></div>
+                </section>
+                <section class="optimization-analytics-card">
+                  <h3>Expected Total LP by EOD vs actual</h3>
+                  <div id="optimization-upgrading-forecast-chart" class="optimization-analytics-chart optimization-upgrading-tall-chart"></div>
+                </section>
+                <section class="optimization-analytics-card">
+                  <h3>Forecast error by snapshot hour</h3>
+                  <div id="optimization-upgrading-error-chart" class="optimization-analytics-chart"></div>
+                </section>
+                <section class="optimization-upgrading-redemption-chart-row">
+                  <div id="optimization-upgrading-redemption-legend" class="optimization-efficiency-legend optimization-upgrading-redemption-legend" aria-label="Toggle components in redemption charts"></div>
+                  <div class="optimization-upgrading-redemption-charts">
+                    <div class="optimization-analytics-card">
+                      <h3>Component NET ATLAS/s vs Faction LP Redemption</h3>
+                      <div id="optimization-upgrading-net-atlas-chart" class="optimization-analytics-chart optimization-upgrading-redemption-chart"></div>
+                    </div>
+                    <div class="optimization-analytics-card">
+                      <h3>Component Profit Margin vs Faction LP Redemption</h3>
+                      <div id="optimization-upgrading-margin-chart" class="optimization-analytics-chart optimization-upgrading-redemption-chart"></div>
+                    </div>
+                  </div>
+                </section>
+                <section class="optimization-analytics-card optimization-upgrading-breakeven-card optimization-analytics-summary-card">
+                  <div class="optimization-upgrading-breakeven-header">
+                    <h3>LP Analysis yesterday</h3>
+                    <div class="optimization-upgrading-breakeven-toggle" role="group" aria-label="Cost basis for LP Analysis yesterday">
+                      <span class="optimization-upgrading-breakeven-toggle-label">Cost basis:</span>
+                      <button id="optimization-upgrading-breakeven-basis-external" type="button" class="optimization-upgrading-breakeven-toggle-option" data-basis="external" aria-pressed="true">External</button>
+                      <button id="optimization-upgrading-breakeven-basis-internal" type="button" class="optimization-upgrading-breakeven-toggle-option" data-basis="internal" aria-pressed="false">Internal</button>
+                      <button id="optimization-upgrading-breakeven-basis-equal-net" type="button" class="optimization-upgrading-breakeven-toggle-option" data-basis="equal-net" aria-pressed="false">Equal Net</button>
+                      <button id="optimization-upgrading-breakeven-basis-custom" type="button" class="optimization-upgrading-breakeven-toggle-option" data-basis="custom" aria-pressed="false">Custom</button>
+                    </div>
+                  </div>
+                  <div class="fleet-table-wrap optimization-upgrading-breakeven-wrap">
+                    <table class="fleet-table optimization-table optimization-upgrading-breakeven-table">
+                      <thead id="optimization-upgrading-breakeven-head"></thead>
+                      <tbody id="optimization-upgrading-breakeven-body"><tr class="empty-row"><td colspan="9">Awaiting component prices</td></tr></tbody>
+                    </table>
+                  </div>
+                </section>
+                <section class="optimization-analytics-card optimization-upgrading-primary-chart-card">
+                  <div class="optimization-efficiency-card-header"><h3>Component Efficiency Frontier</h3></div>
+                  <div id="optimization-upgrading-efficiency-legend" class="optimization-efficiency-legend" aria-label="Toggle components in efficiency chart"></div>
+                  <div id="optimization-upgrading-efficiency-chart" class="optimization-analytics-chart optimization-upgrading-tall-chart"></div>
+                </section>
+                <details class="earnings-metric-guide optimization-upgrading-page-guide" open>
+                  <summary>How to read this page</summary>
+                  <div class="earnings-metric-guide-list">
+                    <article class="earnings-metric-guide-item"><h4>Selection Uplift</h4><p>Component selection uplift compares actual and neutral selection at matched active capacity, using completion cohorts and ATLAS per active crew-day. Completed UTC days only; today is excluded from dots, trend lines and automatic axis ranges. Neutral plans use their intended UTC hour (recording hour for legacy records). A single missing hour may use the preceding observed plan from the same scope; the dot tooltip identifies this estimate. Estimates are never chained.</p></article>
+                    <article class="earnings-metric-guide-item"><h4>Crew-State Utilization</h4><p>From 8 September UTC: estimated Toolkit downtime is removed from claim lock first, then unclassified capacity. Productive work is unchanged. Total capacity is the default and includes red Toolkit downtime. Net capacity excludes downtime from the denominator and hides red. Earlier bars remain unadjusted. Below 90% Toolkit coverage a warning is shown; without coverage the bar remains visible and unadjusted. Hover over each legend label for its definition.</p></article>
+                    <article class="earnings-metric-guide-item"><h4>Capacity management</h4><p>Utilization Loss and Capacity Management Impact start on 8 September 2026 and show completed UTC days only; they are empty until that first day completes. Loss is negative ATLAS / net crew-day. Combined impact is selection plus utilization; above zero, selection gains outweigh utilization losses. Hollow dots indicate incomplete or unadjusted evidence. These are contribution estimates, not realized profit.</p><p>Utilization loss values corrected Claim locked + Proven eligible idle at the neutral mix’s historical ATLAS contribution per crew-hour (LP value minus consumed component cost). Fixed costs are not charged again; incremental transaction fees are not modeled. Loss is negative, or zero when no profitable opportunity is estimated. Vertical whiskers extend downward for additional unclassified capacity: they are a scenario range, not statistical confidence or proven idle time. Toolkit downtime is excluded using the same estimated correction as the capacity bars, from 8 September UTC; uncovered days remain unadjusted and are labelled. Missing hourly neutral mixes use the nearest same-day observation. Both new charts divide by net crew-hours / 24, regardless of the bar toggle. Combined impact adds calendar-day selection uplift to utilization loss using the same daily prices and neutral mix. Cross-midnight work is split across calendar days using reconstructed work intervals, not the upper-left chart’s completion cohorts. Outage attribution and hourly opportunity timing remain estimates. The original selection chart is unchanged.</p><p id="optimization-upgrading-management-notes"></p></article>
+                    <article class="earnings-metric-guide-item"><h4>Toolkit Downtime</h4><p>This C4 data source is not connected yet. Account-clock differences will remain unavailable until a C4 source supplies them; unknown time is never treated as zero downtime.</p><p id="optimization-upgrading-toolkit-status" role="status">Awaiting C4 data source</p></article>
+
+                    <article class="earnings-metric-guide-item"><h4>Faction LP redemption vs player LP per upgrading crew</h4><p>Each dot is one completed UTC day comparing total faction redemption with this player’s LP per average hourly phantom crew.</p><p class="earnings-metric-guide-formula"><strong>Formula: </strong>Player LP per crew = daily player LP / average hourly phantom crew; correlation compares that value with faction LP redeemed that day.</p><p><strong>Interpretation: </strong>Higher correlation means the player’s upgrading pace moves with the faction’s redemption pattern; it is directional evidence, not proof by itself.</p></article>
+                    <article class="earnings-metric-guide-item"><h4>ATLAS / LP vs LP / average crew</h4><p>Each dot is one completed UTC day comparing the exact on-chain ATLAS value of one LP with this player’s LP produced per average phantom crew.</p><p class="earnings-metric-guide-formula"><strong>Formula: </strong>LP / average crew = daily player LP / 24-hour time-weighted average phantom crew.</p><p><strong>Interpretation: </strong>This is the price-neutral production response: it shows whether automation changes production intensity as LP becomes more or less valuable.</p></article>
+                    <article class="earnings-metric-guide-item"><h4>ATLAS / LP vs component cost / average crew</h4><p>Shows daily component consumption valued in ATLAS against the exact redemption value of one LP.</p><p class="earnings-metric-guide-formula"><strong>Formula: </strong>Component cost / average crew = daily installed component cost / 24-hour time-weighted average phantom crew.</p><p><strong>Interpretation: </strong>Higher spending at higher ATLAS/LP can indicate the automation is using components when production is more valuable; days with incomplete prices are omitted.</p></article>
+                    <article class="earnings-metric-guide-item"><h4>ATLAS / LP vs actual − neutral baseline uplift / average crew</h4><p>Compares the actual plan against the complete neutral planned baseline for the same day and plots the economic difference per average phantom crew.</p><p class="earnings-metric-guide-formula"><strong>Formula: </strong>Uplift = (actual LP − neutral LP) × ATLAS/LP − (actual component cost − neutral component cost); uplift / average crew = uplift / 24-hour time-weighted average phantom crew.</p><p><strong>Interpretation: </strong>The zero line is the reference: positive values mean actual automation beat neutral at that day’s redemption rate. Transaction costs are excluded because a neutral counterfactual transaction cost is not directly observed.</p></article>
+                    <article class="earnings-metric-guide-item"><h4>Expected Total LP by EOD vs actual</h4><p>Each line follows one day’s hourly forecast. The final dot is the actual faction LP redemption.</p><p class="earnings-metric-guide-formula"><strong>Formula: </strong>Hourly expected_total_lp_eod snapshots are plotted against the final daily faction LP redemption.</p><p><strong>Interpretation: </strong>Distance from the line to the final dot is forecast error at that hour; tighter lines mean the forecast stabilized earlier in the day.</p></article>
+                    <article class="earnings-metric-guide-item"><h4>Forecast error by snapshot hour</h4><p>Shows the signed forecast error distribution for each snapshot hour.</p><p class="earnings-metric-guide-formula"><strong>Formula: </strong>Error = expected total LP by EOD - actual faction LP redemption; the line is median error and the band is the middle 50%.</p><p><strong>Interpretation: </strong>Above zero means overestimation; below zero means underestimation. A narrow band means that hour is more reliable.</p></article>
+                    <article class="earnings-metric-guide-item"><h4>Component profit margin vs faction LP redemption</h4><p>Shows how each component’s implied redemption value compares with its current GM price or its internal cost across 10B–50B faction LP redemption, according to the LP Analysis cost-basis toggle.</p><p class="earnings-metric-guide-formula"><strong>Formula: </strong>Margin = (((faction ATLAS pool / faction LP redemption) × component LP) / selected component cost - 1) × 100.</p><p><strong>Interpretation: </strong>Above zero means redemption value exceeds the selected cost; below zero means the selected cost is higher. The faction-colored line marks yesterday’s redemption.</p></article>
+                    <article class="earnings-metric-guide-item"><h4>Component Efficiency Frontier</h4><p>Compares component return and earning speed at yesterday’s faction LP redemption. Bubble size represents cargo weight; crossed-out points are Pareto-dominated. Use the legend to include or exclude components; INK starts excluded so it does not compress the other points. The unified basis toggle controls the prices used by this chart.</p><p class="earnings-metric-guide-formula"><strong>Formula: </strong>X = profit margin; Y = net ATLAS/s; gross ATLAS/s = LP/s × faction ATLAS pool / faction LP; net ATLAS/s subtracts the selected component price / upgrade duration.</p><p><strong>Interpretation: </strong>Points farther right and higher are stronger. The drawn line connects the non-dominated points on the two visible axes.</p></article>
+                    <article class="earnings-metric-guide-item"><h4>LP Analysis yesterday</h4><p>Use one unified price basis across the table, Component Net ATLAS, Component Profit Margin, and Component Efficiency Frontier. <strong>External</strong> uses current GM prices. <strong>Internal</strong> uses complete production-chain costs from Inventory Ledger. <strong>Equal Net</strong> keeps the best External component fixed and calculates the price each other component needs to match its Net ATLAS/s. <strong>Custom</strong> uses saved profile/faction/component overrides and otherwise inherits live External prices.</p><p class="earnings-metric-guide-formula"><strong>Formula: </strong>Breakeven LP = faction ATLAS pool × component LP / selected price. LP/s = component LP / upgrade duration. Gross ATLAS/s uses yesterday’s faction LP; all downstream profitability metrics use the selected price.</p><p><strong>Capital-limited: </strong>Profit Margin measures percentage return on the selected component price.</p><p><strong>Crew-limited: </strong>Net ATLAS/s measures absolute earning speed after the selected component price.</p><p><strong>Cargo-limited: </strong>Net ATLAS/cargo unit = (implied redemption value − selected component price) / cargo weight.</p></article>
+                  </div>
+                </details>
+              </div>
+            </section>
+          </div>
+          <div id="optimization-analytics-tooltip" class="optimization-analytics-tooltip" hidden></div>
+        </section>
+
+        <section class="section-view" data-section-panel="earnings">
+          <div class="earnings-panel active" data-earnings-panel="scanning">
+            <div class="dashboard-grid earnings-metrics-grid">
+              <section class="metric-card">
+                <span class="metric-label">SDU Price</span>
+                <strong id="earnings-sdu-price-value">--</strong>
+                <small id="earnings-sdu-price-note">Awaiting Aephia data</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Best Net Profit</span>
+                <strong id="earnings-sdu-scan-value">--</strong>
+                <small id="earnings-sdu-scan-note">Yesterday</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Best NP per Crew</span>
+                <strong id="earnings-sdu-value-value">--</strong>
+                <small id="earnings-sdu-value-note">Yesterday</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Best Success Rate</span>
+                <strong id="earnings-rental-value">--</strong>
+                <small id="earnings-rental-note">Yesterday</small>
+              </section>
+            </div>
+
+            <section class="work-surface earnings-chart-surface collapsed" data-chart-panel>
+              <header class="earnings-chart-header">
+                <button class="earnings-chart-toggle" type="button" data-chart-toggle aria-expanded="false">
+                  <span class="chart-toggle-arrow" aria-hidden="true">v</span>
+                  <span>Net Profit by Fleet</span>
+                </button>
+                <div class="earnings-chart-mode-switch" role="group" aria-label="Chart mode">
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="total">Total</button>
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="perCrew">Per Crew</button>
+                </div>
+              </header>
+              <div class="earnings-chart-body">
+                <div id="earnings-net-profit-chart" class="earnings-net-profit-chart" aria-label="Scanning net profit by fleet over the last 30 days"></div>
+              </div>
+            </section>
+
+            <section class="work-surface earnings-surface">
+              <div class="activity-filter-bar earnings-filter-bar">
+                <label class="activity-filter">
+                  <span>Date</span>
+                  <select id="earnings-scanning-date-filter" aria-label="Filter scanning earnings by date">
+                    <option value="">All Dates</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Fleet</span>
+                  <select id="earnings-scanning-fleet-filter" aria-label="Filter scanning earnings by fleet">
+                    <option value="">All Fleets</option>
+                  </select>
+                </label>
+                <span class="activity-filter-note">Filters combine with AND</span>
+                <div class="earnings-cost-basis-switch" role="group" aria-label="Scanning valuation basis" title="Internal uses current Inventory Ledger total cost per unit at the recorded supply starbase. External uses historical Galactic Marketplace prices. An asterisk marks whole-column external fallback.">
+                  <button class="earnings-chart-mode-btn active" type="button" data-earnings-cost-basis="scanning" data-cost-basis-mode="internal" aria-pressed="true">Internal Cost Basis</button>
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-cost-basis="scanning" data-cost-basis-mode="external" aria-pressed="false">External Cost Basis</button>
+                </div>
+                <button class="earnings-per-unit-btn" type="button" data-earnings-per-unit="scanning" aria-pressed="false">Per Unit</button>
+              </div>
+              <div id="earnings-sync-status" class="fleet-sync-status" role="status">Awaiting earnings data</div>
+              <div class="fleet-table-wrap">
+                <table class="fleet-table earnings-table">
+                  <thead id="earnings-table-head">
+                    <tr>
+                      <th scope="col">Date</th>
+                      <th scope="col">Fleet</th>
+                      <th scope="col">SDU Max</th>
+                      <th scope="col">SDU Found</th>
+                      <th scope="col">Revenue</th>
+                      <th scope="col">Food Cost</th>
+                      <th scope="col">Fuel Cost</th>
+                      <th scope="col">Total Rental Cost</th>
+                      <th scope="col">Txs Cost</th>
+                      <th scope="col">Total Costs</th>
+                      <th scope="col">Net Profit</th>
+                      <th scope="col">Profit Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody id="earnings-table-body">
+                    <tr class="empty-row">
+                      <td colspan="12">No earnings data loaded</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <details class="earnings-metric-guide" open>
+                <summary>How to read this page</summary>
+                <div id="earnings-scanning-metric-guide" class="earnings-metric-guide-list"></div>
+              </details>
+            </section>
+          </div>
+
+          <div class="earnings-panel" data-earnings-panel="mining">
+            <div class="dashboard-grid earnings-metrics-grid">
+              <section class="metric-card">
+                <span class="metric-label">Highest Net Profit Fleet</span>
+                <strong id="earnings-mining-ammo-price-value">--</strong>
+                <small id="earnings-mining-ammo-price-note">Today</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Best Net Profit</span>
+                <strong id="earnings-mining-mined-value">--</strong>
+                <small id="earnings-mining-mined-note">Yesterday</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Best NP per Crew</span>
+                <strong id="earnings-mining-revenue-value">--</strong>
+                <small id="earnings-mining-revenue-note">Yesterday</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Highest Raw Material Mined</span>
+                <strong id="earnings-mining-rental-value">--</strong>
+                <small id="earnings-mining-rental-note">Yesterday</small>
+              </section>
+            </div>
+
+            <section class="work-surface earnings-chart-surface collapsed" data-chart-panel>
+              <header class="earnings-chart-header">
+                <button class="earnings-chart-toggle" type="button" data-chart-toggle aria-expanded="false">
+                  <span class="chart-toggle-arrow" aria-hidden="true">v</span>
+                  <span>Net Profit by Fleet</span>
+                </button>
+                <div class="earnings-chart-mode-switch" role="group" aria-label="Chart mode">
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="total">Total</button>
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="perCrew">Per Crew</button>
+                </div>
+              </header>
+              <div class="earnings-chart-body">
+                <div id="earnings-mining-net-profit-chart" class="earnings-net-profit-chart" aria-label="Mining net profit by fleet over the last 30 days"></div>
+              </div>
+            </section>
+
+            <section class="work-surface earnings-chart-surface collapsed" data-chart-panel>
+              <header class="earnings-chart-header">
+                <button class="earnings-chart-toggle" type="button" data-chart-toggle aria-expanded="false">
+                  <span class="chart-toggle-arrow" aria-hidden="true">v</span>
+                  <span>Net Profit by Raw Material</span>
+                </button>
+                <div class="earnings-chart-mode-switch" role="group" aria-label="Chart mode">
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="total">Total</button>
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="perCrew">Per Crew</button>
+                </div>
+              </header>
+              <div class="earnings-chart-body">
+                <div id="earnings-mining-material-net-profit-chart" class="earnings-net-profit-chart" aria-label="Mining net profit by raw material over the last 30 days"></div>
+              </div>
+            </section>
+
+            <section class="work-surface earnings-chart-surface collapsed" data-chart-panel>
+              <header class="earnings-chart-header">
+                <button class="earnings-chart-toggle" type="button" data-chart-toggle aria-expanded="false">
+                  <span class="chart-toggle-arrow" aria-hidden="true">v</span>
+                  <span>Net Profit by Starbase</span>
+                </button>
+                <div class="earnings-chart-mode-switch" role="group" aria-label="Chart mode">
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="total">Total</button>
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="perCrew">Per Crew</button>
+                </div>
+              </header>
+              <div class="earnings-chart-body">
+                <div id="earnings-mining-starbase-net-profit-chart" class="earnings-net-profit-chart" aria-label="Mining net profit by starbase over the last 30 days"></div>
+              </div>
+            </section>
+
+            <section class="work-surface earnings-surface">
+              <div class="activity-filter-bar earnings-filter-bar">
+                <label class="activity-filter">
+                  <span>Date</span>
+                  <select id="earnings-mining-date-filter" aria-label="Filter mining earnings by date">
+                    <option value="">All Dates</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Fleet</span>
+                  <select id="earnings-mining-fleet-filter" aria-label="Filter mining earnings by fleet">
+                    <option value="">All Fleets</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Raw Material</span>
+                  <select id="earnings-mining-material-filter" aria-label="Filter mining earnings by raw material">
+                    <option value="">All Materials</option>
+                  </select>
+                </label>
+                <span class="activity-filter-note">Filters combine with AND</span>
+                <div class="earnings-cost-basis-switch" role="group" aria-label="Mining valuation basis" title="Internal uses current Inventory Ledger total cost per unit at the recorded supply starbase. External uses historical Galactic Marketplace prices. An asterisk marks whole-column external fallback.">
+                  <button class="earnings-chart-mode-btn active" type="button" data-earnings-cost-basis="mining" data-cost-basis-mode="internal" aria-pressed="true">Internal Cost Basis</button>
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-cost-basis="mining" data-cost-basis-mode="external" aria-pressed="false">External Cost Basis</button>
+                </div>
+                <button class="earnings-per-unit-btn" type="button" data-earnings-per-unit="mining" aria-pressed="false">Per Unit</button>
+              </div>
+              <div id="earnings-mining-sync-status" class="fleet-sync-status" role="status">Awaiting mining earnings data</div>
+              <div class="fleet-table-wrap">
+                <table class="fleet-table earnings-table">
+                  <thead id="earnings-mining-table-head">
+                    <tr>
+                      <th scope="col">Date</th>
+                      <th scope="col">Fleet</th>
+                      <th scope="col">Txs Daily</th>
+                      <th scope="col">Starbase</th>
+                      <th scope="col">Raw Material</th>
+                      <th scope="col">Mined</th>
+                      <th scope="col">Revenue</th>
+                      <th scope="col">Ammo Cost</th>
+                      <th scope="col">Food Cost</th>
+                      <th scope="col">Fuel Cost</th>
+                      <th scope="col">Total Rental Cost</th>
+                      <th scope="col">Txs Cost</th>
+                      <th scope="col">Total Costs</th>
+                      <th scope="col">Net Profit</th>
+                      <th scope="col">Profit Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody id="earnings-mining-table-body">
+                    <tr class="empty-row">
+                      <td colspan="15">No mining earnings data loaded</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <details class="earnings-metric-guide" open>
+                <summary>How to read this page</summary>
+                <div id="earnings-mining-metric-guide" class="earnings-metric-guide-list"></div>
+              </details>
+            </section>
+          </div>
+
+          <div class="earnings-panel" data-earnings-panel="marketplace">
+            <div class="section-subtabs" role="tablist" aria-label="Marketplace data view">
+              <button class="subtab-button active" type="button" data-marketplace-subtab="raw" aria-selected="true">Raw Data</button>
+              <button class="subtab-button" type="button" data-marketplace-subtab="events" aria-selected="false">Decoded Events</button>
+              <button class="subtab-button" type="button" data-marketplace-subtab="trades" aria-selected="false">Trades</button>
+              <button class="subtab-button" type="button" data-marketplace-subtab="global" aria-selected="false">Global Ledger</button>
+              <button class="subtab-button" type="button" data-marketplace-subtab="game" aria-selected="false">Game Ledger</button>
+            </div>
+            <section class="work-surface earnings-surface" data-marketplace-panel="raw">
+              <div id="earnings-marketplace-raw-status" class="fleet-sync-status" role="status">ALL FACTIONS · Awaiting Marketplace raw data</div>
+              <div id="earnings-marketplace-raw-linked-signature" class="fleet-sync-status" hidden></div>
+              <div class="activity-filters marketplace-raw-filters">
+                <label>Search <input id="earnings-marketplace-raw-search" type="search" placeholder="Signature, date, slot, payload…" autocomplete="off"></label>
+                <label>From <input id="earnings-marketplace-raw-from" type="date"></label>
+                <label>To <input id="earnings-marketplace-raw-to" type="date"></label>
+                <label>Discovery Source <select id="earnings-marketplace-raw-discovery-source"><option value="">All</option></select></label>
+              </div>
+              <details class="earnings-metric-guide">
+                <summary id="earnings-marketplace-raw-coverage-summary">Source coverage awaiting checkpoint</summary>
+                <div id="earnings-marketplace-raw-coverage" class="earnings-metric-guide-list"></div>
+              </details>
+              <div class="fleet-table-wrap">
+                <table class="fleet-table earnings-table">
+                  <thead id="earnings-marketplace-raw-table-head"><tr>
+                    <th><button type="button" data-marketplace-raw-sort="timestamp">Timestamp (UTC)</button></th>
+                    <th><button type="button" data-marketplace-raw-sort="discoverySource">Discovery Source</button></th>
+                    <th><button type="button" data-marketplace-raw-sort="slot">Slot</button></th>
+                    <th><button type="button" data-marketplace-raw-sort="success">Success</button></th>
+                    <th><button type="button" data-marketplace-raw-sort="signature">Signature</button></th>
+                    <th><button type="button" data-marketplace-raw-sort="payloadHash">Payload Hash</button></th>
+                    <th>Payload</th>
+                  </tr></thead>
+                  <tbody id="earnings-marketplace-raw-table-body"><tr class="empty-row"><td colspan="7">No Marketplace raw transactions loaded</td></tr></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="work-surface earnings-surface" data-marketplace-panel="events" hidden>
+              <div id="earnings-marketplace-events-status" class="fleet-sync-status" role="status">ALL FACTIONS · Awaiting decoded Marketplace events</div>
+              <div id="earnings-marketplace-events-linked-signature" class="fleet-sync-status" hidden></div>
+              <div class="activity-filters marketplace-raw-filters">
+                <label>Search <input id="earnings-marketplace-events-search" type="search" placeholder="Search all event fields…" autocomplete="off"></label>
+                <label>From <input id="earnings-marketplace-events-from" type="date"></label>
+                <label>To <input id="earnings-marketplace-events-to" type="date"></label>
+                <label>Event Type <select id="earnings-marketplace-events-type"><option value="">All</option></select></label>
+                <label>Action <select id="earnings-marketplace-events-action"><option value="">All</option></select></label>
+              </div>
+              <div class="fleet-table-wrap">
+                <table class="fleet-table earnings-table">
+                  <thead id="earnings-marketplace-events-table-head"><tr><th>Timestamp (UTC)</th><th>Event Type</th><th>Action</th><th>Market</th><th>From</th><th>To</th><th>Asset</th><th>Mint</th><th>Quantity</th><th>Unit Price</th><th>Order ID</th><th>Transaction Signature</th></tr></thead>
+                  <tbody id="earnings-marketplace-events-table-body"><tr class="empty-row"><td colspan="12">No decoded Marketplace events loaded</td></tr></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="work-surface earnings-surface" data-marketplace-panel="trades" hidden>
+              <div id="earnings-marketplace-sync-status" class="fleet-sync-status" role="status">ALL FACTIONS · Awaiting Marketplace trades</div>
+              <div class="fleet-table-wrap">
+                <table class="fleet-table earnings-table">
+                  <thead><tr><th>Timestamp (UTC)</th><th>Side</th><th>Marketplace</th><th>Faction</th><th>Starbase</th><th>Asset</th><th>Amount</th><th>Gross Value</th><th>Unit Price</th><th>Marketplace Fee</th><th>Tx Fees</th><th>Net Paid / Received</th><th>Net / Unit</th><th>Signature</th></tr></thead>
+                  <tbody id="earnings-marketplace-table-body"><tr class="empty-row"><td colspan="14">No Marketplace trades loaded</td></tr></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="work-surface earnings-surface" data-marketplace-panel="global" hidden>
+              <div id="earnings-marketplace-global-status" class="fleet-sync-status" role="status">ALL WALLETS · Awaiting global ledger events</div>
+              <div class="fleet-table-wrap">
+                <table class="fleet-table earnings-table">
+                  <thead><tr><th>Timestamp (UTC)</th><th>Direction</th><th>Wallet</th><th>Counterparty</th><th>Movement</th><th>Asset</th><th>Quantity</th><th>Principal</th><th>Selling Marketplace Fee</th><th>Cumulative Tx Fees</th><th>Final Basis</th><th>Cost / Unit</th><th>Signature</th><th>Status</th></tr></thead>
+                  <tbody id="earnings-marketplace-global-table-body"><tr class="empty-row"><td colspan="14">No global ledger events loaded</td></tr></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="work-surface earnings-surface" data-marketplace-panel="game" hidden>
+              <div class="marketplace-game-header">
+                <div id="earnings-marketplace-game-status" class="fleet-sync-status" role="status">Awaiting game ledger events</div>
+                <div id="earnings-marketplace-game-direction-switch" class="marketplace-side-switch" role="group" aria-label="Game Ledger direction">
+                  <button class="marketplace-side-button marketplace-side-buy active" type="button" data-marketplace-game-direction="deposit" aria-pressed="true">DEPOSITS</button>
+                  <button class="marketplace-side-button marketplace-side-sell" type="button" data-marketplace-game-direction="withdraw" aria-pressed="false">WITHDRAWALS</button>
+                </div>
+              </div>
+              <div class="fleet-table-wrap">
+                <table class="fleet-table earnings-table">
+                  <thead><tr><th>Timestamp (UTC)</th><th>Asset</th><th>Quantity</th><th>Principal</th><th>Carried Basis</th><th>Selling Marketplace Fee</th><th>Tx Fees</th><th>Inventory Basis</th><th>Cost / Unit</th><th>Received / Unit</th><th>Net Profit / Unit</th><th>Signature</th><th>Physical Withdrawal</th><th>Status</th></tr></thead>
+                  <tbody id="earnings-marketplace-game-table-body"><tr class="empty-row"><td colspan="14">No game ledger events loaded</td></tr></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <div class="earnings-panel" data-earnings-panel="cargo">
+            <section class="work-surface earnings-chart-surface collapsed" data-chart-panel>
+              <button class="earnings-chart-toggle" type="button" data-chart-toggle aria-expanded="false">
+                <span class="chart-toggle-arrow" aria-hidden="true">v</span>
+                <span>Total Costs by Fleet</span>
+              </button>
+              <div class="earnings-chart-body">
+                <div id="earnings-cargo-net-profit-chart" class="earnings-net-profit-chart" aria-label="Cargo total costs by fleet over the last 30 days"></div>
+              </div>
+            </section>
+
+            <section class="work-surface earnings-chart-surface collapsed" data-chart-panel>
+              <button class="earnings-chart-toggle" type="button" data-chart-toggle aria-expanded="false">
+                <span class="chart-toggle-arrow" aria-hidden="true">v</span>
+                <span>Total Costs Breakdown</span>
+              </button>
+              <div class="earnings-chart-body">
+                <div id="earnings-cargo-cost-breakdown-chart" class="earnings-net-profit-chart" aria-label="Cargo total costs by day"></div>
+              </div>
+            </section>
+
+            <section class="work-surface earnings-surface cargo-table-panel">
+              <div class="cargo-table-switch" role="tablist" aria-label="Cargo cost table">
+                <button class="cargo-table-switch-button active" type="button" role="tab" data-cargo-table-select="fleet" aria-selected="true">Cargo Costs by Fleet</button>
+                <button class="cargo-table-switch-button" type="button" role="tab" data-cargo-table-select="allocation" aria-selected="false">Cargo Cost Allocation by Fleet &amp; Asset</button>
+              </div>
+              <div class="cargo-table-view" data-cargo-table-panel="fleet">
+              <div class="activity-filter-bar earnings-filter-bar">
+                <label class="activity-filter">
+                  <span>Date</span>
+                  <select id="earnings-cargo-date-filter" aria-label="Filter cargo earnings by date">
+                    <option value="">All Dates</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Fleet</span>
+                  <select id="earnings-cargo-fleet-filter" aria-label="Filter cargo earnings by fleet">
+                    <option value="">All Fleets</option>
+                  </select>
+                </label>
+                <span class="activity-filter-note">Filters combine with AND</span>
+              </div>
+              <div id="earnings-cargo-sync-status" class="fleet-sync-status" role="status">Awaiting cargo earnings data</div>
+              <div class="fleet-table-wrap">
+                <table class="fleet-table earnings-table">
+                  <thead id="earnings-cargo-table-head">
+                    <tr>
+                      <th scope="col">Date</th>
+                      <th scope="col">Fleet</th>
+                      <th scope="col">Txs Daily</th>
+                      <th scope="col">Cycles Daily</th>
+                      <th scope="col">Assignment</th>
+                      <th scope="col">Travel Mode (time)</th>
+                      <th scope="col">Starbase</th>
+                      <th scope="col">Fuel Cost</th>
+                      <th scope="col">Total Rental Cost</th>
+                      <th scope="col">Txs Cost</th>
+                      <th scope="col">Total Costs</th>
+                      <th scope="col">Txs Cost Pct</th>
+                      <th scope="col">Cargo Volume</th>
+                      <th scope="col">Cargo Capacity</th>
+                      <th scope="col">Cargo Efficiency</th>
+                    </tr>
+                  </thead>
+                  <tbody id="earnings-cargo-table-body">
+                    <tr class="empty-row">
+                      <td colspan="14">No cargo earnings data loaded</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <details class="earnings-metric-guide" open>
+                <summary>How to read this page</summary>
+                <div id="earnings-cargo-metric-guide" class="earnings-metric-guide-list"></div>
+              </details>
+              </div>
+              <div class="cargo-table-view" data-cargo-table-panel="allocation" hidden>
+              <div class="activity-filter-bar earnings-filter-bar">
+                <label class="activity-filter">
+                  <span>Date</span>
+                  <select id="earnings-cargo-allocation-date-filter" aria-label="Filter cargo allocation by date"><option value="">All Dates</option></select>
+                </label>
+                <label class="activity-filter">
+                  <span>Fleet</span>
+                  <select id="earnings-cargo-allocation-fleet-filter" aria-label="Filter cargo allocation by fleet"><option value="">All Fleets</option></select>
+                </label>
+                <label class="activity-filter">
+                  <span>Asset</span>
+                  <select id="earnings-cargo-allocation-asset-filter" aria-label="Filter cargo allocation by asset"><option value="">All Assets</option></select>
+                </label>
+                <span class="activity-filter-note">Filters combine with AND</span>
+                <button class="earnings-per-unit-btn earnings-filter-action-right" type="button" data-earnings-per-unit="cargoAllocation" aria-pressed="false">Per Unit</button>
+              </div>
+              <div id="earnings-cargo-allocation-sync-status" class="fleet-sync-status" role="status">Awaiting cargo allocation data</div>
+              <div class="fleet-table-wrap">
+                <table class="fleet-table earnings-table">
+                  <thead id="earnings-cargo-allocation-table-head">
+                    <tr>
+                      <th scope="col">Date</th>
+                      <th scope="col">Fleet</th>
+                      <th scope="col">Asset</th>
+                      <th scope="col">Origin Starbase</th>
+                      <th scope="col">Destination Starbase</th>
+                      <th scope="col">Assignment</th>
+                      <th scope="col">Cargo Amount</th>
+                      <th scope="col">Cargo Volume</th>
+                      <th scope="col">Allocated Fuel</th>
+                      <th scope="col">Fuel Cost</th>
+                      <th scope="col">Rental Cost</th>
+                      <th scope="col">TXS Cost</th>
+                      <th scope="col">Total Cargo Costs</th>
+                    </tr>
+                  </thead>
+                  <tbody id="earnings-cargo-allocation-table-body">
+                    <tr class="empty-row"><td colspan="13">No cargo allocation data loaded</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <details class="earnings-metric-guide" open>
+                <summary>How to read this page</summary>
+                <div id="earnings-cargoAllocation-metric-guide" class="earnings-metric-guide-list"></div>
+              </details>
+              </div>
+            </section>
+          </div>
+          <div class="earnings-panel" data-earnings-panel="crafting">
+            <div class="dashboard-grid earnings-metrics-grid">
+              <section class="metric-card">
+                <span class="metric-label">Highest Net Profit Asset</span>
+                <strong id="earnings-crafting-top-asset-value">--</strong>
+                <small id="earnings-crafting-top-asset-note">Today</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Best Net Profit</span>
+                <strong id="earnings-crafting-best-np-value">--</strong>
+                <small id="earnings-crafting-best-np-note">Yesterday</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Best Profit Margin</span>
+                <strong id="earnings-crafting-best-margin-value">--</strong>
+                <small id="earnings-crafting-best-margin-note">Yesterday</small>
+              </section>
+              <section class="metric-card">
+                <span class="metric-label">Highest Revenue</span>
+                <strong id="earnings-crafting-best-revenue-value">--</strong>
+                <small id="earnings-crafting-best-revenue-note">Yesterday</small>
+              </section>
+            </div>
+
+            <section class="work-surface earnings-chart-surface collapsed" data-chart-panel>
+              <header class="earnings-chart-header">
+                <button class="earnings-chart-toggle" type="button" data-chart-toggle aria-expanded="false">
+                  <span class="chart-toggle-arrow" aria-hidden="true">v</span>
+                  <span>Net Profit by Asset</span>
+                </button>
+                <div class="earnings-chart-mode-switch" role="group" aria-label="Chart mode">
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="total">Total</button>
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="perCrew">Per Crew</button>
+                </div>
+              </header>
+              <div class="earnings-chart-body">
+                <div id="earnings-crafting-asset-net-profit-chart" class="earnings-net-profit-chart" aria-label="Crafting net profit by asset over the last 30 days"></div>
+              </div>
+            </section>
+
+            <section class="work-surface earnings-chart-surface collapsed" data-chart-panel>
+              <header class="earnings-chart-header">
+                <button class="earnings-chart-toggle" type="button" data-chart-toggle aria-expanded="false">
+                  <span class="chart-toggle-arrow" aria-hidden="true">v</span>
+                  <span>Net Profit by Starbase</span>
+                </button>
+                <div class="earnings-chart-mode-switch" role="group" aria-label="Chart mode">
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="total">Total</button>
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="perCrew">Per Crew</button>
+                </div>
+              </header>
+              <div class="earnings-chart-body">
+                <div id="earnings-crafting-starbase-net-profit-chart" class="earnings-net-profit-chart" aria-label="Crafting net profit by starbase over the last 30 days"></div>
+              </div>
+            </section>
+
+            <section class="work-surface earnings-surface">
+              <div class="activity-filter-bar earnings-filter-bar">
+                <label class="activity-filter">
+                  <span>Date</span>
+                  <select id="earnings-crafting-date-filter" aria-label="Filter crafting earnings by date">
+                    <option value="">All Dates</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Starbase</span>
+                  <select id="earnings-crafting-starbase-filter" aria-label="Filter crafting earnings by starbase">
+                    <option value="">All Starbases</option>
+                  </select>
+                </label>
+                <label class="activity-filter">
+                  <span>Asset</span>
+                  <select id="earnings-crafting-asset-filter" aria-label="Filter crafting earnings by asset">
+                    <option value="">All Assets</option>
+                  </select>
+                </label>
+                <span class="activity-filter-note">Filters combine with AND</span>
+                <div class="earnings-cost-basis-switch" role="group" aria-label="Crafting valuation basis" title="Internal cost basis values ingredients using your actual internal acquisition costs. External cost basis values ingredients using current Galactic Marketplace prices.">
+                  <button class="earnings-chart-mode-btn active" type="button" data-earnings-cost-basis="crafting" data-cost-basis-mode="internal" aria-pressed="true">Internal Cost Basis</button>
+                  <button class="earnings-chart-mode-btn" type="button" data-earnings-cost-basis="crafting" data-cost-basis-mode="external" aria-pressed="false">External Cost Basis</button>
+                </div>
+                <button class="earnings-per-unit-btn" type="button" data-earnings-per-unit="crafting" aria-pressed="false">Per Unit</button>
+              </div>
+              <div id="earnings-crafting-sync-status" class="fleet-sync-status" role="status">Awaiting crafting data</div>
+              <div class="fleet-table-wrap">
+                <table class="fleet-table earnings-table">
+                  <thead id="earnings-crafting-table-head">
+                    <tr>
+                      <th scope="col">Date</th>
+                      <th scope="col">Starbase</th>
+                      <th scope="col">Asset</th>
+                      <th scope="col">Txs Daily</th>
+                      <th scope="col">Crafted</th>
+                      <th scope="col">Avg Crew</th>
+                      <th scope="col">Revenue</th>
+                      <th scope="col">Ingredient Cost Basis</th>
+                      <th scope="col">Crafting Fee Cost</th>
+                      <th scope="col">Txs Cost</th>
+                      <th scope="col">Total Costs</th>
+                      <th scope="col">Net Profit</th>
+                      <th scope="col">NP per crew</th>
+                      <th scope="col">Profit Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody id="earnings-crafting-table-body">
+                    <tr class="empty-row">
+                      <td colspan="14">No crafting data loaded</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <details class="earnings-metric-guide" open>
+                <summary>How to read this page</summary>
+                <div id="earnings-crafting-metric-guide" class="earnings-metric-guide-list"></div>
+              </details>
+            </section>
+          </div>
+          <div class="earnings-panel" data-earnings-panel="upgrading">
+            <section class="work-surface earnings-chart-surface collapsed" data-chart-panel>
+              <header class="earnings-chart-header">
+                <button class="earnings-chart-toggle" type="button" data-chart-toggle aria-expanded="false"><span class="chart-toggle-arrow" aria-hidden="true">v</span><span>Net Profit by Asset</span></button>
+                <div class="earnings-chart-mode-switch" role="group" aria-label="Chart mode"><button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="total">Total</button><button class="earnings-chart-mode-btn" type="button" data-earnings-chart-mode="perCrew">Per Crew</button></div>
+              </header>
+              <div class="earnings-chart-body"><div id="earnings-upgrading-asset-net-profit-chart" class="earnings-net-profit-chart" aria-label="Upgrading net profit by asset over the last 30 completed days"></div></div>
+            </section>
+            <section class="work-surface earnings-surface">
+              <div class="activity-filter-bar earnings-filter-bar">
+                <label class="activity-filter"><span>Date</span><select id="earnings-upgrading-date-filter"><option value="">All Dates</option></select></label>
+                <label class="activity-filter"><span>Starbase</span><select id="earnings-upgrading-starbase-filter"><option value="">All Starbases</option></select></label>
+                <label class="activity-filter"><span>Asset</span><select id="earnings-upgrading-asset-filter"><option value="">All Assets</option></select></label>
+                <span class="activity-filter-note">Filters combine with AND · Today excluded</span>
+                <div class="earnings-cost-basis-switch" role="group" aria-label="Upgrading valuation basis" title="Internal cost basis values components using your actual internal acquisition costs. External cost basis values components using current Galactic Marketplace prices."><button class="earnings-chart-mode-btn active" type="button" data-earnings-cost-basis="upgrading" data-cost-basis-mode="internal" aria-pressed="true">Internal Cost Basis</button><button class="earnings-chart-mode-btn" type="button" data-earnings-cost-basis="upgrading" data-cost-basis-mode="external" aria-pressed="false">External Cost Basis</button></div>
+                <button class="earnings-per-unit-btn" type="button" data-earnings-per-unit="upgrading" aria-pressed="false">Per Unit</button>
+              </div>
+              <div id="earnings-upgrading-sync-status" class="fleet-sync-status" role="status">Awaiting upgrading data</div>
+              <div class="fleet-table-wrap"><table class="fleet-table earnings-table"><thead id="earnings-upgrading-table-head"><tr><th>Date</th><th>Starbase</th><th>Asset</th><th>Installed</th><th>Avg Crew</th><th>Revenue</th><th>Component Cost Basis</th><th>Txs Cost</th><th>Total Costs</th><th>Net Profit</th><th>Net Profit per Crew</th><th>Profit Margin</th></tr></thead><tbody id="earnings-upgrading-table-body"><tr class="empty-row"><td colspan="12">No upgrading data loaded</td></tr></tbody></table></div>
+              <details class="earnings-metric-guide" open><summary>How to read this page</summary><div id="earnings-upgrading-metric-guide" class="earnings-metric-guide-list"></div></details>
+            </section>
+          </div>
+          <div class="earnings-panel" data-earnings-panel="breakeven">
+            <section class="earnings-section">
+              <div class="activity-filter-bar earnings-filter-bar">
+                <label class="activity-filter"><span>Starbase</span><select id="earnings-breakeven-starbase-filter"><option value="">All Starbases</option></select></label>
+                <label class="activity-filter"><span>Asset</span><select id="earnings-breakeven-asset-filter"><option value="">All Assets</option></select></label>
+                <label class="breakeven-inventory-toggle"><input id="earnings-breakeven-hide-low-inventory" type="checkbox"> Hide Inventory ≤ 2</label>
+                <div class="earnings-cost-basis-switch" role="group" aria-label="Inventory Ledger view"><button class="earnings-chart-mode-btn active" type="button" data-inventory-ledger-view="breakdown" aria-pressed="true">Cost breakdown</button><button class="earnings-chart-mode-btn" type="button" data-inventory-ledger-view="acquisition" aria-pressed="false">Acquisition routes</button></div>
+                <button class="earnings-per-unit-btn" type="button" data-earnings-per-unit="inventoryLedger" aria-pressed="false">Per Unit</button>
+              </div>
+              <details class="earnings-metric-guide"><summary>How to read this page</summary><p>Cost breakdown is the default. Scanning, Mining, Crafting, GM, LM and Cargo are additive contributions to the same blended cost, including purchased ingredients. In Per Unit mode they all use the same inventory denominator and sum to Total / Unit.</p><p>Acquisition routes compares Purchased, Produced and Reward landed costs, including cargo. Produced includes mined resources, scanned SDUs and crafted outputs with all purchased or internally produced ingredients and conversion costs. Reward covers faction claim rewards: their principal is zero, so the route cost is the claim and deposit transaction fees allocated to those units. Each route uses its own remaining costed quantity; route unit prices do not add together. These are remaining pooled inventory costs, not a particular day's production prices.</p><p>Total / Unit is identical in both views. Produced % is internally produced costed quantity divided by all costed quantity; uncosted stock is excluded. Unknown or other acquisition origins remain separate in hover details, so the complement is not necessarily purchased. Missing route prices display --, not zero.</p><p>Uncosted stock does not dilute known unit prices. The ledger's blended basis is extrapolated across uncosted stock for total inventory valuation; that estimate does not assign an acquisition origin. Uncosted inventory is consumed first; remaining known origin quantities follow pooled consumption. Unexplained surplus timing is estimated, not a historical stock observation.</p></details>
+              <div id="earnings-breakeven-sync-status" class="fleet-sync-status" role="status">Awaiting Inventory Ledger data</div>
+              <div class="fleet-table-wrap"><table class="fleet-table earnings-table"><thead id="earnings-cost-ledger-table-head"><tr><th>Starbase</th><th>Asset</th><th>Quantity</th><th>Scanning</th><th>Mining</th><th>Crafting</th><th>LM</th><th>GM</th><th>Cargo</th><th>Total Basis</th><th>Status</th></tr></thead><tbody id="earnings-cost-ledger-table-body"><tr class="empty-row"><td colspan="11">No inventory cost-basis data loaded</td></tr></tbody></table></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="section-view" data-section-panel="aepa">
+          <section class="work-surface earnings-surface">
+            <div id="aepa-status" class="fleet-sync-status" role="status">Awaiting AEPA data</div>
+            <div id="aepa-linked" class="fleet-sync-status"></div>
+            <div id="aepa-raw">
+              <div class="activity-filters marketplace-raw-filters">
+                <label>Search <input id="aepa-search" type="search" placeholder="Signature, date, slot, payload…"></label>
+                <label>From <input id="aepa-from" type="date"></label><label>To <input id="aepa-to" type="date"></label>
+                <label>Source <select><option>AEPA</option></select></label>
+              </div>
+              <div class="fleet-table-wrap"><table class="fleet-table earnings-table"><thead id="aepa-head"></thead><tbody id="aepa-body"></tbody></table></div>
+
+            </div>
+            <div id="aepa-decoded" hidden>
+              <div class="activity-filters marketplace-raw-filters"><label>Search <input id="aepa-event-search" type="search" placeholder="Search events"></label><label>From (UTC) <input id="aepa-event-from" type="datetime-local" step="1"></label><label>To (UTC) <input id="aepa-event-to" type="datetime-local" step="1"></label><label>Fleet <select id="aepa-event-fleet"><option value="">All fleets</option></select></label><label>Event <select id="aepa-event-event"><option value="">All events</option></select></label><label>Action <select id="aepa-event-action"><option value="">All actions</option></select></label><label>Info <select id="aepa-event-info"><option value="">All info</option></select></label></div>
+              <p id="aepa-event-status" role="status"></p>
+              <div class="fleet-table-wrap"><table class="fleet-table earnings-table"><thead><tr><th>Time (UTC)</th><th>Event</th><th>Action</th><th>Info</th><th>Fleet</th><th>Fleet Address</th><th>Resource/Asset</th><th>Quantity</th><th>From</th><th>To</th><th>Result</th><th>Signature</th><th>JSON</th></tr></thead><tbody id="aepa-decoded-body"></tbody></table></div>
+            </div>
+              <dialog id="aepa-evidence" aria-labelledby="aepa-evidence-title"><h3 id="aepa-evidence-title">Original raw evidence</h3><button id="aepa-close-evidence" type="button" autofocus>Close</button><div id="aepa-detail"></div></dialog>
+          </section>
+        </section>
+      </main>
+
+      <div id="settings-overlay" class="settings-overlay hidden" aria-hidden="true">
+        <aside class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+          <form id="settings-form" class="settings-form sensitive-hidden">
+          <div class="settings-header">
+            <div>
+              <p class="eyebrow" id="settings-title">Settings</p>
+            </div>
+            <div class="settings-header-actions">
+              <button id="toggle-sensitive-btn" class="ghost-button" type="button">Show RPC URL</button>
+              <button id="close-settings-btn" class="ghost-button icon-button" type="button" aria-label="Close settings">X</button>
+            </div>
+          </div>
+
+          <section class="settings-section">
+            <h3>Profile</h3>
+            <label>
+              Aephia API key
+              <input name="aephiaApiKey" type="password" autocomplete="new-password" spellcheck="false" />
+            </label>
+            <label>
+              MUD player profile
+              <input name="mudPlayerProfile" type="text" autocomplete="off" spellcheck="false" />
+            </label>
+            <label>
+              ONI player profile
+              <input name="oniPlayerProfile" type="text" autocomplete="off" spellcheck="false" />
+            </label>
+            <label>
+              USTUR player profile
+              <input name="usturPlayerProfile" type="text" autocomplete="off" spellcheck="false" />
+            </label>
+            <label>
+              GM Trading Wallets
+              <textarea name="gmTradingWallets" rows="3" autocomplete="off" spellcheck="false" placeholder="Additional public wallet addresses, separated by commas or new lines"></textarea>
+            </label>
+          </section>
+
+          <section class="settings-section">
+            <h3>RPC Limiter</h3>
+            <label class="switch-row">
+              <input name="useRpcLimiter" type="checkbox" />
+              <span>Use RPC limiter</span>
+            </label>
+            <label>
+              RPC Limiter Main URL
+              <input class="sensitive-field" id="rpc-limiter-main-url" type="text" readonly autocomplete="off" />
+            </label>
+            <label>
+              RPC Limiter Fallback URL
+              <input class="sensitive-field" id="rpc-limiter-fallback-url" type="text" readonly autocomplete="off" />
+            </label>
+            <div class="rpc-limiter-state-row">
+              <span>State: <strong id="rpc-limiter-state-path">—</strong></span>
+              <span id="rpc-limiter-active"></span>
+              <span id="rpc-limiter-updated"></span>
+            </div>
+            <label>
+              Replacement RPC URL
+              <input name="rpcUrl" type="password" autocomplete="new-password" spellcheck="false" />
+              <small>Leave the URL empty to clear the selected Main or Fallback slot.</small>
+            </label>
+            <label class="switch-row">
+              <input name="providerRole" type="checkbox" />
+              <span>Send above URL to Fallback slot (unchecked = Main)</span>
+            </label>
+            <label>
+              Requests / sec
+              <input name="rpcRequestsPerSecond" type="number" min="0.1" step="0.1" autocomplete="off" />
+            </label>
+            <button id="send-rpc-limiter-btn" class="ghost-button" type="button">Send settings to RPC Limiter</button>
+          </section>
+
+          <div class="settings-actions">
+            <button id="save-settings-btn" type="submit">Save Settings</button>
+            <span id="save-status" role="status"></span>
+          </div>
+          </form>
+        </aside>
+      </div>
+
+      <div class="modal-backdrop" id="rpc-usage-modal" hidden>
+        <section class="rpc-usage-dialog" role="dialog" aria-modal="true" aria-labelledby="rpc-usage-dialog-title">
+          <div class="rpc-usage-dialog-header">
+            <div>
+              <h2 id="rpc-usage-dialog-title">RPC Usage</h2>
+              <p id="rpc-usage-period">UTC day in progress</p>
+            </div>
+            <button id="rpc-usage-close-btn" class="icon-button" type="button" aria-label="Close RPC Usage">×</button>
+          </div>
+          <div class="rpc-usage-controls">
+            <label>
+              UTC date
+              <select id="rpc-usage-date-select" aria-label="RPC Usage UTC date"></select>
+            </label>
+            <label>
+              Faction
+              <select id="rpc-usage-faction-select" aria-label="Filter RPC Usage by faction">
+                <option value="all">All</option>
+                <option value="MUD">MUD</option>
+                <option value="ONI">ONI</option>
+                <option value="USTUR">USTUR</option>
+                <option value="global">Shared/Global</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </label>
+            <label>Menu<select id="rpc-usage-menu-select" aria-label="Filter RPC Usage by menu"><option value="all">All</option><option value="MF">My Fleets</option><option value="PC">Production / Consumption</option><option value="EA">Earnings</option><option value="OP">Optimization</option><option value="other">Other / Unattributed</option></select></label>
+            <label>Tab<select id="rpc-usage-tab-select" aria-label="Filter RPC Usage by tab"><option value="all">All</option></select></label>
+            <label>
+              Method
+              <select id="rpc-usage-method-select" aria-label="Filter RPC Usage by method">
+                <option value="all">All</option>
+              </select>
+            </label>
+          </div>
+          <div id="rpc-usage-content">
+            <div class="rpc-usage-metrics">
+              <div><span>UTC-day total</span><strong id="rpc-usage-total">—</strong></div>
+              <div><span>Filtered subtotal</span><strong id="rpc-usage-filtered">—</strong></div>
+              <div><span>Day share</span><strong id="rpc-usage-share">—</strong></div>
+              <div><span>Retries</span><strong id="rpc-usage-retries">—</strong></div>
+              <div><span>Fallback attempts</span><strong id="rpc-usage-fallbacks">—</strong></div>
+            </div>
+            <p class="rpc-usage-provider-line" id="rpc-usage-providers">Providers: —</p>
+            <p class="rpc-usage-updated" id="rpc-usage-updated">Last telemetry update: —</p>
+            <div class="rpc-usage-table-wrap">
+              <table class="rpc-usage-table">
+                <thead><tr><th>Method</th><th>Requests</th><th>Day share</th><th>Retries</th><th>Fallbacks</th></tr></thead>
+                <tbody id="rpc-usage-method-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <p class="rpc-usage-empty" id="rpc-usage-empty" hidden>No telemetry recorded</p>
+        </section>
+      </div>
+
+      <div class="modal-backdrop" id="update-modal" hidden>
+        <section class="update-dialog" role="dialog" aria-modal="true" aria-labelledby="update-dialog-title">
+          <h2 id="update-dialog-title">My Star Atlas C4 Update</h2>
+          <div class="update-version-grid">
+            <span>Current version</span><strong id="update-current-version">v0.5.66</strong>
+            <span>Latest GitHub version</span><strong id="update-latest-version">Checking...</strong>
+          </div>
+          <p class="update-message" id="update-message">Checking GitHub for the latest version...</p>
+          <div class="update-dialog-actions">
+            <button id="update-confirm-btn" type="button" disabled>Update</button>
+            <button id="update-cancel-btn" type="button">Cancel</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="./request-guard.js"></script>
+    <script src="./rpc-usage-model.js"></script>
+    <script src="./cargo-allocation-renderer.js"></script>
+    <script src="./resource-cost-basis.js"></script>
+    <script src="./toolkit-capacity-chart.js"></script>
+    <script src="./c4-mining-charts.js"></script>
+    <script src="./c4-resource-colors.js"></script>
+    <script src="./c4-mining-geography-ui.js"></script>
+    <script src="./c4-mining-ui.js"></script>
+    <script src="./renderer.js"></script>
+    <script src="./c4-aepa-model.js"></script>
+    <script src="./c4-aepa-ui.js"></script>
+    <script src="./c4-fleet-ui.js"></script>
+  </body>
+</html>

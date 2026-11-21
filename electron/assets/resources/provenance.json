@@ -1,0 +1,78 @@
+{
+  "catalog": "https://galaxy.staratlas.com/nfts",
+  "method": "Dominant of 5 median-cut foreground clusters; alpha>=200, brightness40..235, chroma>18; 256px thumbnails",
+  "resources": {
+    "Lumanite": {
+      "color": "#cc3111",
+      "icon": "assets/resources/luman.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/LUMAN.png",
+      "sha256": "1c1818ef7dac5ec669a82853672988a774d9ca96de79fd461a9af69533d1811d"
+    },
+    "Arco": {
+      "color": "#5c3230",
+      "icon": "assets/resources/arco.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/ARCO.png",
+      "sha256": "62f5645fea5846e7060289eadb049432855a3bec80adb23ae8c9600924190f0d"
+    },
+    "Biomass": {
+      "color": "#9b8c74",
+      "icon": "assets/resources/biomass.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/BIOMASS.png",
+      "sha256": "21076f1731a5d92189d5264b9b2b58634e3f72af014c79b6903925eedd8a630a"
+    },
+    "Carbon": {
+      "color": "#9ba665",
+      "icon": "assets/resources/carbon.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/CARBON.png",
+      "sha256": "c51499030b953313c6548a8fe252cd3aad79896071bcbe6f945007d27f9e5d8f"
+    },
+    "Iron Ore": {
+      "color": "#8a8075",
+      "icon": "assets/resources/feore.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/FEORE.png",
+      "sha256": "cc98fdcaa1d34fbeb5d2a0375b6e2cbeeda812a5c4d991e4f955e9eda02448e3"
+    },
+    "Copper Ore": {
+      "color": "#6f4334",
+      "icon": "assets/resources/cuore.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/CUORE.png",
+      "sha256": "0b7e5977d876ed8d4561f2a302c7ae45ba51e9c9fe44d7dbd91adf8d1ddfb28f"
+    },
+    "Rochinol": {
+      "color": "#312432",
+      "icon": "assets/resources/roch.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/ROCH.png",
+      "sha256": "7d072407260a9ec9151b1ca695716866f24fb583bb53bcc89175851c43a7dd41"
+    },
+    "Diamond": {
+      "color": "#223544",
+      "icon": "assets/resources/diamond.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/DIAMOND.png",
+      "sha256": "b158e6d44ebddd9a10814095f0cc7ed00aaff813dda2184407ffe2cfe737a727"
+    },
+    "Hydrogen": {
+      "color": "#42cbd9",
+      "icon": "assets/resources/hyg.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/HYG.png",
+      "sha256": "f7345c942cd6c1a11a0311cd4f2a82483deb20c7698f02666cdf388b02107c2f"
+    },
+    "Titanium Ore": {
+      "color": "#ae9b85",
+      "icon": "assets/resources/tiore.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/TIORE-FfxSY4VfH0UoZswz.png",
+      "sha256": "60ac86d45411b521e5942fe4eb2ef7a28db0767d77ec78321dcef94cebad7fb7"
+    },
+    "Nitrogen": {
+      "color": "#5b221d",
+      "icon": "assets/resources/nitro.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/NITRO-wmxKLSXK8vkZc9IY.png",
+      "sha256": "26f49e0674a30820be4e38f6921000829d76fb05552c708d24e5893fd344d63c"
+    },
+    "Silica": {
+      "color": "#895a43",
+      "icon": "assets/resources/sand.png",
+      "source": "https://storage.googleapis.com/nft-assets/items/SAND-4qhHTv4IplaAvDYZ.png",
+      "sha256": "dc085029c7617f1355ad4c9d454eea75167ee95edca94f51af401fd755751973"
+    }
+  }
+}
