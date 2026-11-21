@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, Menu, dialog, shell, safeStorage } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
-const { checkForC4Updates, LATEST_RELEASE_PAGE } = require('./c4-update');
+const { checkForC4Updates, installC4Update, LATEST_RELEASE_PAGE } = require('./c4-update');
 
 // Use the actual Starbased renderer, with no legacy data services running.
 app.setName('My Star Atlas C4');
@@ -102,10 +102,29 @@ if (!app.requestSingleInstanceLock()) {
      if(!profile)return {ok:false,error:'Configure a C4 player profile'};
      return readFleet(faction,profile,options.trigger==='manual');
     });
-    handle('updates:check', () => checkForC4Updates(require('../package.json').version));
-    handle('updates:download-and-restart', async () => {
-      await shell.openExternal(LATEST_RELEASE_PAGE);
-      return { opened: true };
+    const installUpdates = process.platform === 'win32' && !app.isPackaged;
+    const currentVersion = require('../package.json').version;
+    let updating = false;
+    handle('updates:check', async () => ({
+      ...await checkForC4Updates(currentVersion), opensReleasePage: !installUpdates,
+    }));
+    handle('updates:download-and-restart', async expectedVersion => {
+      if (!installUpdates) {
+        await shell.openExternal(LATEST_RELEASE_PAGE);
+        return { opened: true };
+      }
+      if (updating) throw new Error('An update is already in progress.');
+      updating = true;
+      const appRoot = app.getAppPath();
+      try {
+        const result = await installC4Update({ appRoot, currentVersion, expectedVersion });
+        app.relaunch({ execPath: process.execPath, args: [appRoot] });
+        setImmediate(() => app.quit());
+        return result;
+      } catch (error) {
+        updating = false;
+        throw error;
+      }
     });
     handle('rpc-limiter:get-status', () => ({ active: false }));
     handle('diagnostic:earnings-renderer', () => ({ ok: true }));

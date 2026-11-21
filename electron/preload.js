@@ -143,7 +143,7 @@ contextBridge.exposeInMainWorld('myStarAtlas', {
   getAppVersion: () => ipcRenderer.invoke('app:get-version'),
   getRpcUsageDay: (utcDate) => ipcRenderer.invoke('telemetry:rpc-usage-day', utcDate),
   checkForUpdates: () => ipcRenderer.invoke('updates:check'),
-  downloadUpdateAndRestart: () => ipcRenderer.invoke('updates:download-and-restart'),
+  downloadUpdateAndRestart: version => ipcRenderer.invoke('updates:download-and-restart', version),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (payload) => ipcRenderer.invoke('settings:save', payload),
   getRpcLimiterStatus: () => ipcRenderer.invoke('rpc-limiter:get-status'),

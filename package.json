@@ -1,6 +1,6 @@
 {
   "name": "my-star-atlas-c4",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Local-first Electron app for Star Atlas C4 fleet performance dashboards.",
   "author": "Aephia",
   "private": true,
@@ -14,7 +14,7 @@
     "package:mac": "electron-builder --mac --universal",
     "package:mac:arm64": "electron-builder --mac --arm64",
     "package:mac:x64": "electron-builder --mac --x64",
-    "test:c4": "node --test test/c4-raw-store.test.cjs"
+    "test:c4": "node --test test/c4-raw-store.test.cjs test/c4-update.test.cjs"
   },
   "dependencies": {
     "@aephia/atlas-kit": "0.6.0-next.58",

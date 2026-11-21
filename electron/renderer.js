@@ -1759,7 +1759,7 @@ function renderUpdateState(result, error = null) {
   const updateAvailable = Boolean(result?.updateAvailable);
   const opensReleasePage = Boolean(result?.opensReleasePage);
   const checkError = error?.message || error || result?.checkError;
-  const noRelease = opensReleasePage && !result.latestVersion && !checkError;
+  const noRelease = Boolean(result?.noRelease) || (opensReleasePage && !result.latestVersion && !checkError);
   updateButton.classList.toggle('update-available', updateAvailable);
   updateButton.title = updateAvailable
     ? `Update available: v${result.latestVersion}`
@@ -10811,13 +10811,15 @@ updateConfirmButton.addEventListener('click', async () => {
     ? 'Opening GitHub Releases...'
     : `Downloading My Star Atlas v${update.latestVersion}, preparing the update, and restarting...`);
   try {
-    const result = await api.downloadUpdateAndRestart();
+    const result = await api.downloadUpdateAndRestart(update.latestVersion);
     if (result?.opened) {
       setText(updateMessage, update.opensReleasePage
         ? 'Opened GitHub Releases in your browser.'
         : `Opened the GitHub Releases page. Download the latest macOS build (v${update.latestVersion}) and reinstall to update.`);
       updateConfirmButton.disabled = false;
       updateCancelButton.disabled = false;
+    } else if (result?.updated) {
+      setText(updateMessage, `Update to v${result.latestVersion} installed. Restarting...`);
     }
   } catch (error) {
     console.error(error);
