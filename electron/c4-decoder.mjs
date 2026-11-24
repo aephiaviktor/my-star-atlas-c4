@@ -2,7 +2,7 @@
 import {getTransactionDecoder,getCompiledTransactionMessageDecoder,getBase58Encoder,getBase58Decoder} from '@solana/kit';
 import {sage,playerProfile} from '@aephia/atlas-kit/bindings';
 import {annotateRent} from './c4-rent.mjs';
-export const DECODER_VERSION='c4-instructions-4';
+export const DECODER_VERSION='c4-instructions-5';
 const PROGRAM='C4SAgeKLgb3pTLWhVr6NRwWyYFuTR7ZeSXFrzoLwfMzF';
 const plain=value=>JSON.parse(JSON.stringify(value,(_,v)=>typeof v==='bigint'?v.toString():v));
 export async function decodeRecord({submission,responses}) {
