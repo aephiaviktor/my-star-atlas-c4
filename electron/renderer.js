@@ -2399,7 +2399,7 @@ function renderMiningCharts(result) {
     result.selectedFleet || selectedMiningFleet
   );
 
-  if(result.accounting){window.C4MiningAccountingUI.render(result,'mining');window.C4MiningGeographyUI.render(result);return;}
+  if(result.accounting){window.C4MiningGeographyUI.render(result);return;}
   const total = result.total || 0;
   setDailyAverageMetric(miningAvgValue, miningAvgNote, result);
   setText(miningTotalValue, formatWholeNumber(total));
@@ -2836,7 +2836,7 @@ function renderConsMining(result) {
     'All Fleets'
   );
 
-  if(result.accounting){window.C4MiningAccountingUI.render(result,'consumption-mining');window.C4MiningGeographyUI.render(result);return;}
+  if(result.accounting){window.C4MiningGeographyUI.render(result);return;}
   setDailyAverageMetric(consMiningAvgValue, consMiningAvgNote, result);
   setText(consMiningTotalValue, formatWholeNumber(result.total));
   setText(consMiningTotalNote, `Updated ${formatCheckedAt(result.checkedAt)}`);
@@ -5187,7 +5187,7 @@ function createAccountCell(value) {
 }
 
 function getFleetFilterText(fleet) {
-  return [fleet.label, fleet.assignment, fleet.activity, fleet.key]
+  return [fleet.label, fleet.activity, fleet.key]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
@@ -5214,7 +5214,7 @@ function renderFleetSearch() {
   const managedCount = Number(latestFleetResult.managedFleetCount ?? 0);
   const filterPrefix = hasQuery ? `${filteredFleets.length} of ${fleets.length}` : `${fleets.length}`;
   setFleetStatus(
-    `${filterPrefix} fleets loaded from AEPA at ${formatCheckedAt(latestFleetResult.checkedAt)}`
+    `${filterPrefix} fleets loaded from z.ink at ${formatCheckedAt(latestFleetResult.checkedAt)}`
   );
 }
 
@@ -5222,7 +5222,7 @@ function renderFleets(result) {
   latestFleetResult = result;
   if (!result?.ok) {
     renderFleetEmpty(result?.error || 'Fleet sync failed');
-    setFleetStatus('AEPA fleet sync failed');
+    setFleetStatus('z.ink fleet sync failed');
     return;
   }
   setCachedFactionResult(normalizeFaction(latestSettings?.faction), 'fleet', result);
@@ -5230,7 +5230,7 @@ function renderFleets(result) {
   const fleets = Array.isArray(result.fleets) ? result.fleets : [];
   if (!fleets.length) {
     renderFleetEmpty(`No ${normalizeFaction(latestSettings?.faction)} fleets found`);
-    setFleetStatus(`AEPA synced at ${formatCheckedAt(result.checkedAt)}`);
+    setFleetStatus(`z.ink synced at ${formatCheckedAt(result.checkedAt)}`);
     return;
   }
 
@@ -5252,7 +5252,7 @@ async function refreshFleets() {
   }
 
   renderFleetEmpty('Loading current fleet data…');
-  setFleetStatus('Loading AEPA fleets and current C4 ships...');
+  setFleetStatus('Reading current fleets and ships from z.ink…');
   try {
     const result = await api.getFleets(settings);
     if (faction !== normalizeFaction((latestSettings || getFormPayload()).faction)) return;
@@ -5261,7 +5261,7 @@ async function refreshFleets() {
     console.error(error);
     if (faction !== normalizeFaction((latestSettings || getFormPayload()).faction)) return;
     renderFleetEmpty('Fleet sync failed');
-    setFleetStatus('AEPA fleet sync failed');
+    setFleetStatus('z.ink fleet sync failed');
   }
 }
 
@@ -10216,7 +10216,6 @@ function refreshVisibleIdentity({ force = false } = {}) {
 
 function refreshCurrentVisibleData() {
   if (currentSection === 'transactions') return window.refreshPtrTransactions?.(true);
-  if (currentSection === 'aepa') return window.refreshAepaData?.({force:true});
   if (currentSection === 'fleet') return refreshFleets();
   if (currentSection === 'earnings') {
     if (currentEarningsSubtab === 'marketplace') return refreshMarketplace({ sync: true });

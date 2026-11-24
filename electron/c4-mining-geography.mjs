@@ -1,16 +1,58 @@
-import {createSageContext} from '@aephia/atlas-kit/client';
-import {getTerritoryRegions} from '@aephia/atlas-kit/factions';
-import {getStarSystems,getAllCelestialBodies} from '@aephia/atlas-kit/world';
-import {createSolanaRpc} from '@solana/kit';
-let cached;
-export async function loadGeography(faction,force=false){
- if(force||!cached||new Date(cached.time).toISOString().slice(0,10)!==new Date().toISOString().slice(0,10)){
-  const ctx=createSageContext({cluster:'zink-ptr',rpc:createSolanaRpc('https://testnet-rpc.z.ink')});
-  try{const regions=await getTerritoryRegions(ctx);const systems=await getStarSystems(ctx);const bodies=await getAllCelestialBodies(ctx);
-   cached={time:Date.now(),regions:regions.regions.map(r=>({id:String(r.id),owner:r.owner,systems:r.systems.map(s=>({id:s.system.address,owner:s.faction}))})),systems:systems.map(s=>({id:s.address,label:s.name})),planets:bodies.map(b=>({id:b.address,label:b.name,system:b.system.address}))};
-  }finally{await ctx.dispose?.();}
- }
- const owner=faction.toLowerCase();const regions=cached.regions.filter(r=>r.systems.some(s=>s.owner===owner));
- const systems=regions.flatMap(r=>r.systems.filter(s=>s.owner===owner).map(s=>({id:s.id,region:r.id,label:cached.systems.find(n=>n.id===s.id)?.label||s.id})));
- return {regions:regions.map(r=>({id:r.id,label:r.id+'-'+({ustur:'US',mud:'MD',oni:'ON'}[r.owner]||'NZ')})),systems,planets:cached.planets.filter(p=>systems.some(s=>s.id===p.system)),checkedAt:new Date(cached.time).toISOString()};
+import { createSageContext } from '@aephia/atlas-kit/client';
+import { listCargoDefinitions } from '@aephia/atlas-kit/cargo';
+import { getStarSystem, getCelestialBody } from '@aephia/atlas-kit/world';
+import { createSolanaRpc } from '@solana/kit';
+
+const UNKNOWN_REGION = 'unresolved';
+const OPTIONS = { commitment: 'finalized' };
+
+export function createMiningReferenceData() {
+  const context = createSageContext({ cluster: 'zink-ptr', rpc: createSolanaRpc('https://testnet-rpc.z.ink') });
+  const systems = new Map();
+  const bodies = new Map();
+  let cargo;
+
+  function memo(map, key, load) {
+    if (!map.has(key)) {
+      map.set(key, load().catch(() => {
+        map.delete(key);
+        return null;
+      }));
+    }
+    return map.get(key);
+  }
+
+  return {
+    async load(entries) {
+      if (!entries.length) return { resources: {}, geography: { regions: [], systems: [], planets: [] } };
+      const systemIds = [...new Set(entries.map(entry => entry.system))];
+      const bodyIds = [...new Set(entries.map(entry => entry.planet))];
+      cargo ??= listCargoDefinitions(context).then(definitions =>
+        Object.fromEntries(definitions.map(definition => [definition.id, definition.name]))).catch(() => {
+        cargo = undefined;
+        return {};
+      });
+      const [resources, resolvedSystems, resolvedBodies] = await Promise.all([
+        cargo,
+        Promise.all(systemIds.map(id => memo(systems, id, () => getStarSystem(context, id, OPTIONS)))),
+        Promise.all(bodyIds.map(id => memo(bodies, id, () => getCelestialBody(context, id, OPTIONS)))),
+      ]);
+      const systemRows = systemIds.map((id, i) => ({
+        id, label: resolvedSystems[i]?.name ?? id,
+        region: String(resolvedSystems[i]?.regionId ?? UNKNOWN_REGION),
+      }));
+      const regionIds = [...new Set(systemRows.map(row => row.region))];
+      const names = new Map(bodyIds.map((id, i) => [id, resolvedBodies[i]?.name ?? id]));
+      const byLocation = new Map(entries.map(({ planet, system }) =>
+        [JSON.stringify([system, planet]), { id: planet, system, label: names.get(planet) }]));
+      return {
+        resources,
+        geography: {
+          regions: regionIds.map(id => ({ id, label: id === UNKNOWN_REGION ? 'Unresolved region' : 'Region ' + id })),
+          systems: systemRows, planets: [...byLocation.values()],
+        },
+      };
+    },
+    dispose: () => context.dispose(),
+  };
 }

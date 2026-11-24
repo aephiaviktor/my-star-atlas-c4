@@ -117,20 +117,27 @@ async function decodeEvidence(row, response) {
   return { signature: row.signature, slot: row.slot, responseText, decoded };
 }
 
-function changesLifecycle(tx) {
-  return tx.decoded.execution === 'Success' && tx.decoded.events.some(event =>
-    event.fleetAddress && (event.action === 'CreateFleet' || event.action === 'DisbandFleet'));
+function sharesFleet(rows) {
+  const seen = new Set();
+  for (const tx of rows) {
+    const addresses = new Set(tx.decoded.events.map(event => event.fleetAddress).filter(Boolean));
+    for (const fleet of addresses) {
+      if (seen.has(fleet)) return true;
+      seen.add(fleet);
+    }
+  }
+  return false;
 }
 
-async function resolveBlockOrder(rpc, store, profile) {
+async function resolveBlockOrder(rpc, store, profile, includePending = false) {
   const slots = new Map();
-  for (const tx of store.history(profile, true)) {
+  for (const tx of store.history(profile, includePending)) {
     if (!slots.has(tx.slot)) slots.set(tx.slot, []);
     slots.get(tx.slot).push(tx);
   }
-  // Only a slot with multiple transactions and a lifecycle change needs a block read.
+  // A block read is only needed when same-slot ordering can affect the same fleet.
   for (const [slot, rows] of slots) {
-    if (rows.length < 2 || !rows.some(changesLifecycle) || rows.every(tx => tx.block_index !== null)) continue;
+    if (rows.length < 2 || rows.every(tx => tx.block_index !== null) || !sharesFleet(rows)) continue;
     const block = await rpc.call('getBlock', [
       slot, { commitment: COMMITMENT, transactionDetails: 'signatures', rewards: false },
     ]);
@@ -142,14 +149,12 @@ async function resolveBlockOrder(rpc, store, profile) {
   }
 }
 
-function snapshot(store, profile, recentLimit) {
+function projectFleetHistory(store, profile) {
   const fleetAddresses = new Set(store.fleets(profile).map(fleet => fleet.address));
   const active = new Map();
   const instances = [];
   const transactions = [];
-  let failed = 0;
   for (const { signature, slot, decoded } of store.history(profile)) {
-    if (decoded.execution === 'Failed') failed++;
     const events = [];
     const instructions = decoded.events.slice().sort((a, b) =>
       a.instructionIndex - b.instructionIndex || (a.innerIndex ?? -1) - (b.innerIndex ?? -1));
@@ -167,7 +172,7 @@ function snapshot(store, profile, recentLimit) {
       }
       const instance = active.get(fleet);
       events.push({
-        address: fleet, label: instance?.label ?? fleet, action: event.action,
+        ...event, address: fleet, label: instance?.label ?? fleet,
         creationSignature: instance?.creationSignature ?? null, createdSlot: instance?.createdSlot ?? null,
       });
       if (decoded.execution === 'Success' && event.action === 'DisbandFleet' && instance) {
@@ -179,10 +184,19 @@ function snapshot(store, profile, recentLimit) {
     }
     transactions.push({ signature, slot, time: decoded.time, execution: decoded.execution, events });
   }
+  return { instances, transactions, fleetCount: fleetAddresses.size };
+}
+
+function snapshot(store, profile, recentLimit) {
+  const { instances, transactions, fleetCount } = projectFleetHistory(store, profile);
   return {
     startSlot: PTR_START_SLOT, profile, checkedAt: store.checkedAt(profile),
-    fleetCount: fleetAddresses.size, transactionCount: transactions.length, failed, instances,
-    recent: transactions.slice(-recentLimit).reverse(),
+    fleetCount, transactionCount: transactions.length, instances,
+    failed: transactions.filter(tx => tx.execution === 'Failed').length,
+    recent: transactions.slice(-recentLimit).reverse().map(tx => ({
+      ...tx, events: tx.events.map(({ address, label, action, creationSignature, createdSlot }) =>
+        ({ address, label, action, creationSignature, createdSlot })),
+    })),
   };
 }
 
@@ -207,7 +221,7 @@ export function createPtrSync(store, { rpc = createPtrRpc() } = {}) {
       const records = await Promise.all(group.map((row, i) => decodeEvidence(row, replies[i])));
       store.saveTransactions(profile, records);
     }
-    await resolveBlockOrder(rpc, store, profile);
+    await resolveBlockOrder(rpc, store, profile, true);
     store.finish(profile, cursors, new Date().toISOString());
     return rows.length;
   }
@@ -215,6 +229,11 @@ export function createPtrSync(store, { rpc = createPtrRpc() } = {}) {
   return {
     read(profile, recentLimit = 100) {
       return snapshot(store, address(profile), recentLimit);
+    },
+    async readHistory(profile) {
+      const owner = address(profile);
+      await resolveBlockOrder(rpc, store, owner);
+      return { ...projectFleetHistory(store, owner), checkedAt: store.checkedAt(owner) };
     },
     sync(profile) {
       const owner = address(profile);

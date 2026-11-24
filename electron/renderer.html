@@ -38,8 +38,6 @@
             <span>Optimization</span>
           </button>
           <button class="nav-button nav-lightblue" type="button" data-section="transactions" aria-pressed="false"><span class="nav-icon">TX</span><span>Transactions</span></button>
-          <button class="nav-button nav-lightblue" type="button" data-section="aepa" aria-pressed="false"><span class="nav-icon">AD</span><span>AEPA Data</span></button>
-          <div class="nav-subsection" id="aepa-columns" hidden><span class="nav-subsection-title">Columns</span><div id="aepa-column-list"></div></div>
           <div class="nav-subsection" id="earnings-column-controls" aria-label="Earnings table columns">
             <span class="nav-subsection-title">Columns</span>
             <label><input type="checkbox" data-earnings-column="color" /> Color</label>
@@ -88,7 +86,6 @@
       <main class="main-area">
         <header class="top-bar">
           <div class="toolbar-tabs">
-            <div class="subtab-bar toolbar-tab-group" data-toolbar-section="aepa" role="tablist" aria-label="AEPA data views"><button class="subtab-button active" type="button" data-aepa-tab="raw">Raw data</button><button class="subtab-button" type="button" data-aepa-tab="decoded">Decoded Events</button></div>
             <div class="subtab-bar toolbar-tab-group" data-toolbar-section="production" role="tablist" aria-label="Production and consumption views">
               <button class="subtab-button active" type="button" data-subtab="scanning" aria-selected="true">Scanning</button>
               <button class="subtab-button" type="button" data-subtab="mining" aria-selected="false">Mining</button>
@@ -1658,27 +1655,6 @@
           </section>
         </section>
 
-        <section class="section-view" data-section-panel="aepa">
-          <section class="work-surface earnings-surface">
-            <div id="aepa-status" class="fleet-sync-status" role="status">Awaiting AEPA data</div>
-            <div id="aepa-linked" class="fleet-sync-status"></div>
-            <div id="aepa-raw">
-              <div class="activity-filters marketplace-raw-filters">
-                <label>Search <input id="aepa-search" type="search" placeholder="Signature, date, slot, payload…"></label>
-                <label>From <input id="aepa-from" type="date"></label><label>To <input id="aepa-to" type="date"></label>
-                <label>Source <select><option>AEPA</option></select></label>
-              </div>
-              <div class="fleet-table-wrap"><table class="fleet-table earnings-table"><thead id="aepa-head"></thead><tbody id="aepa-body"></tbody></table></div>
-
-            </div>
-            <div id="aepa-decoded" hidden>
-              <div class="activity-filters marketplace-raw-filters"><label>Search <input id="aepa-event-search" type="search" placeholder="Search events"></label><label>From (UTC) <input id="aepa-event-from" type="datetime-local" step="1"></label><label>To (UTC) <input id="aepa-event-to" type="datetime-local" step="1"></label><label>Fleet <select id="aepa-event-fleet"><option value="">All fleets</option></select></label><label>Event <select id="aepa-event-event"><option value="">All events</option></select></label><label>Action <select id="aepa-event-action"><option value="">All actions</option></select></label><label>Info <select id="aepa-event-info"><option value="">All info</option></select></label></div>
-              <p id="aepa-event-status" role="status"></p>
-              <div class="fleet-table-wrap"><table class="fleet-table earnings-table"><thead><tr><th>Time (UTC)</th><th>Event</th><th>Action</th><th>Info</th><th>Fleet</th><th>Fleet Address</th><th>Resource/Asset</th><th>Quantity</th><th>From</th><th>To</th><th>Result</th><th>Signature</th><th>JSON</th></tr></thead><tbody id="aepa-decoded-body"></tbody></table></div>
-            </div>
-              <dialog id="aepa-evidence" aria-labelledby="aepa-evidence-title"><h3 id="aepa-evidence-title">Original raw evidence</h3><button id="aepa-close-evidence" type="button" autofocus>Close</button><div id="aepa-detail"></div></dialog>
-          </section>
-        </section>
       </main>
 
       <div id="settings-overlay" class="settings-overlay hidden" aria-hidden="true">
@@ -1842,8 +1818,6 @@
     <script src="./c4-mining-geography-ui.js"></script>
     <script src="./c4-mining-ui.js"></script>
     <script src="./renderer.js"></script>
-    <script src="./c4-aepa-model.js"></script>
-    <script src="./c4-aepa-ui.js"></script>
     <script src="./c4-ptr-ui.js"></script>
     <script src="./c4-fleet-ui.js"></script>
   </body>

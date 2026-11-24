@@ -1,60 +1,144 @@
-// Transfer-based accounting, not measured extraction/burn. All quantities stay exact.
-function accountMining(transactions) {
-  const entries=[],issues=[],states=new Map(),seen=new Set();
-  const consumption={},production={};
-  const ordered=transactions.filter(t=>t.execution==='Success'&&Number.isFinite(Date.parse(t.time)))
-    .slice().sort((a,b)=>a.time.localeCompare(b.time));
-  for(const tx of ordered) {
-    const scope=JSON.stringify([tx.network||'',tx.resetEpoch||'',tx.profile||'']);
-    for(const e of (tx.events||[]).slice().sort((a,b)=>(a.instructionIndex||0)-(b.instructionIndex||0))) {
-      if(e.kind!=='instruction'||!e.fleetAddress)continue;
-      const identity=JSON.stringify([scope,tx.signature,e.instructionIndex,e.innerIndex??null]);
-      if(seen.has(identity))continue;seen.add(identity);
-      const key=scope+':'+e.fleetAddress;
-      if(!states.has(key))states.set(key,{resources:new Set(),supplies:new Map(),loaded:new Set(),locations:new Set(),planet:null,system:null});
-      const state=states.get(key);
-      if(e.action==='StartMiningAsteroid'){
-        for(const id of e.parameters?.resources||[])state.resources.add(String(id));
-        const planet=e.accounts?.asteroid;
-        if(planet)state.locations.add(planet);
-        state.planet=planet||null;state.system=e.accounts?.starSystem||null;
-        continue;
+const SUPPLIES = new Set(['0', '1', '2']);
+const OTHER_ACTIVITY = /^(?:Warp|StartSubwarp|StopSubwarp|OpenScanSignal|Scan$|DetectSignal|ResolveSignal|RecoverSignal|EnterClaimStakesFleetTransfer)/;
+
+function cargoTransfers(event) {
+  const transfers = [];
+  for (const [field, resource, compartment] of [['ammoBank', '0', 'Ammo bank'], ['fuelTank', '2', 'Fuel tank']]) {
+    const option = event.parameters?.[field];
+    if (option?.__option !== 'Some') continue;
+    const amount = BigInt(option.value);
+    if (amount !== 0n) transfers.push({ resource, compartment, loading: amount > 0n, quantity: amount > 0n ? amount : -amount });
+  }
+  const hold = event.parameters?.cargoHold;
+  if (hold?.__option === 'Some') {
+    for (const [field, loading] of [['toLoad', true], ['toUnload', false]]) {
+      for (const [id, amount] of hold.value[field] ?? []) {
+        const quantity = BigInt(amount);
+        if (quantity > 0n) transfers.push({ resource: String(id), compartment: 'Cargo hold', loading, quantity });
       }
-      if(e.action!=='TransferCargoToFleet')continue;
-      const mining=String(e.assignment).toLowerCase()==='mining';
-      const add=(id,amount,loading,compartment)=>{
-        const resource=String(id),quantity=BigInt(amount);if(quantity===0n)return;
-        if(quantity<0n)throw Error('Invalid cargo transfer quantity');
-        if(!mining&&(loading||!state.loaded.has(resource)))return;
-        let kind;
-        if(loading){kind='consumption';state.loaded.add(resource);}
-        else if(state.resources.has(resource)&&state.loaded.has(resource)){
-          issues.push({signature:tx.signature,fleet:e.fleetAddress,resource,reason:'Mixed loaded and mined resource; unload attribution unavailable'});return;
-        }else if(['0','1','2'].includes(resource)||state.loaded.has(resource))kind='consumption';
-        else if(state.resources.has(resource)&&state.locations.size===1)kind='production';
-        else {issues.push({signature:tx.signature,fleet:e.fleetAddress,resource,reason:'Missing or ambiguous mining origin'});return;}
-        let destination=null;
-        if(kind==='consumption'){
-          if(loading){const origins=state.supplies.get(resource)||new Set();origins.add(e.assignmentDestination||null);state.supplies.set(resource,origins);destination=e.assignmentDestination||null;}
-          else {const origins=state.supplies.get(resource);destination=origins?.size===1?[...origins][0]:null;state.supplies.delete(resource);}
-        }
-        const signed=kind==='consumption'&&!loading?-quantity:quantity;
-        const totals=kind==='consumption'?consumption:production;
-        totals[resource]=(BigInt(totals[resource]||0)+signed).toString();
-        entries.push({id:identity+':'+compartment+':'+entries.length,signature:tx.signature,time:tx.time,
-          fleetAddress:e.fleetAddress,fleetName:e.fleetName||e.fleetAddress,resource,kind,quantity:signed.toString(),
-          direction:loading?'load':'unload',compartment,planet:kind==='production'?state.planet:destination,
-          system:kind==='production'?state.system:null,starbase:e.starbaseName||e.accounts?.systemAndStarbasePlayerSystem||'Unknown starbase',
-          assignmentBasis:e.classificationBasis||'Supplied mining assignment',basis:'Successful transfer; recorded at load/unload, not extraction/burn'});
-      };
-      for(const [field,id,label] of [['ammoBank',0,'Ammo bank'],['fuelTank',2,'Fuel tank']]){
-        const option=e.parameters?.[field];if(option?.__option==='Some'){const amount=BigInt(option.value);add(id,amount<0n?-amount:amount,amount>0n,label);}
-      }
-      const hold=e.parameters?.cargoHold;
-      if(hold?.__option==='Some')for(const [field,loading] of [['toLoad',true],['toUnload',false]])
-        for(const [id,amount] of hold.value[field]||[])add(id,amount,loading,'Cargo hold');
     }
   }
-  return {entries,issues,consumption,production};
+  return transfers;
 }
-module.exports={accountMining};
+
+// The input is in finalized block and instruction order, with fleet lifetimes attached.
+function accountMining(transactions) {
+  const entries = [];
+  const issues = [];
+  const states = new Map();
+  const seen = new Set();
+
+  function record(movement, kind, location) {
+    const { quantity, loading, ...fields } = movement;
+    entries.push({
+      ...fields, id: movement.id + ':' + entries.length, kind,
+      direction: loading ? 'load' : 'unload',
+      quantity: (kind === 'consumption' && !loading ? -quantity : quantity).toString(),
+      planet: location.planet, system: location.system,
+    });
+  }
+
+  function excludePending(state) {
+    for (const item of state.pending) state.mixedSupplies.add(item.compartment + item.resource);
+    state.pending = [];
+  }
+
+  for (const tx of transactions) {
+    if (tx.execution !== 'Success' || !Number.isFinite(Date.parse(tx.time))) continue;
+    for (const event of tx.events) {
+      if (!event.creationSignature) continue;
+      const instance = `${event.fleetAddress}:${event.creationSignature}`;
+      const movementId = JSON.stringify([tx.signature, event.instructionIndex, event.innerIndex ?? null]);
+      if (seen.has(movementId)) continue;
+      seen.add(movementId);
+      if (!states.has(instance)) {
+        states.set(instance, {
+          pending: [], supplies: new Map(), mixedSupplies: new Set(),
+          loadedCargo: new Set(), minedOrigins: new Map(), active: null,
+        });
+      }
+      const state = states.get(instance);
+      const accounts = event.accounts ?? {};
+      if (event.action === 'DisbandFleet') {
+        states.delete(instance);
+        continue;
+      }
+      if (OTHER_ACTIVITY.test(event.action)) {
+        excludePending(state);
+        state.supplies.clear();
+      }
+      if (event.action === 'StartMiningAsteroid') {
+        const location = { planet: accounts.asteroid, system: accounts.starSystem };
+        if (!location.planet || !location.system) {
+          excludePending(state);
+          state.active = null;
+          continue;
+        }
+        state.active = { location, resources: (event.parameters?.resources ?? []).map(String) };
+        for (const item of state.pending) {
+          const key = item.compartment + item.resource;
+          if (item.starbase !== location.system) {
+            state.mixedSupplies.add(key);
+            continue;
+          }
+          record(item, 'consumption', location);
+          const prior = state.supplies.get(key);
+          if (prior && prior.location.planet !== location.planet) state.mixedSupplies.add(key);
+          state.supplies.set(key, { quantity: (prior?.quantity ?? 0n) + item.quantity, location });
+        }
+        state.pending = [];
+        continue;
+      }
+      if (event.action === 'StopMiningAsteroid') {
+        const run = state.active;
+        if (run?.location.planet === accounts.asteroid) {
+          for (const resource of run.resources) {
+            const possible = state.minedOrigins.get(resource) ?? new Map();
+            possible.set(JSON.stringify(run.location), run.location);
+            state.minedOrigins.set(resource, possible);
+          }
+        }
+        state.active = null;
+        continue;
+      }
+      if (event.action !== 'TransferCargoToFleet') continue;
+      for (const transfer of cargoTransfers(event)) {
+        const item = {
+          ...transfer, id: movementId, signature: tx.signature, time: tx.time,
+          fleetAddress: event.fleetAddress, fleetName: event.label,
+          fleetInstance: instance, fleetCreatedSlot: event.createdSlot,
+          starbase: accounts.systemAndStarbasePlayerSystem ?? 'Unknown starbase',
+        };
+        const key = item.compartment + item.resource;
+        if (item.loading) {
+          if (item.compartment === 'Cargo hold') state.loadedCargo.add(item.resource);
+          if (SUPPLIES.has(item.resource)) state.pending.push(item);
+          continue;
+        }
+        const origins = item.compartment === 'Cargo hold' ? state.minedOrigins.get(item.resource) : null;
+        if (origins) {
+          if (origins.size === 1 && !state.loadedCargo.has(item.resource)) {
+            record(item, 'production', origins.values().next().value);
+          } else {
+            issues.push({ signature: tx.signature, fleet: event.fleetAddress, resource: item.resource,
+              reason: 'Unload has multiple possible origins or includes previously loaded cargo' });
+          }
+          continue;
+        }
+        const prior = state.supplies.get(key);
+        const pending = state.pending.filter(load => load.compartment + load.resource === key);
+        if (pending.length) {
+          state.pending = state.pending.filter(load => !pending.includes(load));
+          state.mixedSupplies.add(key);
+        }
+        if (prior && !state.mixedSupplies.has(key) && prior.quantity >= item.quantity) {
+          record(item, 'consumption', prior.location);
+          prior.quantity -= item.quantity;
+        }
+      }
+    }
+  }
+  return { entries, issues };
+}
+
+module.exports = { accountMining };
