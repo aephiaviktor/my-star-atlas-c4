@@ -37,6 +37,7 @@
             <span class="nav-icon">OP</span>
             <span>Optimization</span>
           </button>
+          <button class="nav-button nav-lightblue" type="button" data-section="transactions" aria-pressed="false"><span class="nav-icon">TX</span><span>Transactions</span></button>
           <button class="nav-button nav-lightblue" type="button" data-section="aepa" aria-pressed="false"><span class="nav-icon">AD</span><span>AEPA Data</span></button>
           <div class="nav-subsection" id="aepa-columns" hidden><span class="nav-subsection-title">Columns</span><div id="aepa-column-list"></div></div>
           <div class="nav-subsection" id="earnings-column-controls" aria-label="Earnings table columns">
@@ -1637,6 +1638,26 @@
           </div>
         </section>
 
+        <section class="section-view" data-section-panel="transactions" aria-label="PTR 3.2 transactions">
+          <section class="work-surface earnings-surface">
+            <p id="ptr-sync-status" class="fleet-sync-status" role="status"></p>
+            <div class="fleet-table-wrap">
+              <table class="fleet-table earnings-table">
+                <caption>Fleet instances</caption>
+                <thead><tr><th>Fleet</th><th>Address</th><th>Created (UTC)</th><th>Closed (UTC)</th></tr></thead>
+                <tbody id="ptr-fleet-instances"></tbody>
+              </table>
+            </div>
+            <div class="fleet-table-wrap">
+              <table class="fleet-table earnings-table">
+                <caption>Latest 100 on-chain transactions</caption>
+                <thead><tr><th>Time (UTC)</th><th>Slot</th><th>Fleets</th><th>Actions</th><th>Result</th><th>Signature</th></tr></thead>
+                <tbody id="ptr-transactions"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
         <section class="section-view" data-section-panel="aepa">
           <section class="work-surface earnings-surface">
             <div id="aepa-status" class="fleet-sync-status" role="status">Awaiting AEPA data</div>
@@ -1823,6 +1844,7 @@
     <script src="./renderer.js"></script>
     <script src="./c4-aepa-model.js"></script>
     <script src="./c4-aepa-ui.js"></script>
+    <script src="./c4-ptr-ui.js"></script>
     <script src="./c4-fleet-ui.js"></script>
   </body>
 </html>

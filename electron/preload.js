@@ -138,6 +138,10 @@ function consumptionTotalCacheKey(input) {
 }
 
 contextBridge.exposeInMainWorld('myStarAtlas', {
+  ptrTransactions: {
+    read: (sync = false) => ipcRenderer.invoke('c4:ptr-transactions', sync),
+    explorer: signature => ipcRenderer.invoke('c4:ptr-explorer', signature),
+  },
   aepaData: { decoded: options => ipcRenderer.invoke('c4:aepa-decoded',options), sync: (options) => ipcRenderer.invoke('c4:aepa-sync', options), detail: id => ipcRenderer.invoke('c4:aepa-detail', id), explorer: signature => ipcRenderer.invoke('c4:aepa-explorer', signature) },
   getProfileName: () => ipcRenderer.invoke('app:get-profile-name'),
   getAppVersion: () => ipcRenderer.invoke('app:get-version'),

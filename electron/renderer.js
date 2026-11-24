@@ -10158,6 +10158,7 @@ function refreshVisibleProductionSubtab() {
 }
 
 function refreshVisibleFactionViews() {
+  if (currentSection === 'transactions') return window.refreshPtrTransactions?.();
   if (currentSection === 'fleet') return refreshFleets();
   if (currentSection === 'earnings') {
     if (currentEarningsSubtab === 'breakeven') return refreshBreakeven();
@@ -10187,6 +10188,7 @@ function refreshVisibleConsumptionIdentity({ force = false } = {}) {
 }
 
 function refreshVisibleIdentity({ force = false } = {}) {
+  if (currentSection === 'transactions') return window.refreshPtrTransactions?.();
   if (currentSection === 'fleet') return refreshFleets();
   if (currentSection === 'earnings') {
     if (currentEarningsSubtab === 'marketplace') return refreshMarketplace({ sync: false });
@@ -10213,6 +10215,7 @@ function refreshVisibleIdentity({ force = false } = {}) {
 }
 
 function refreshCurrentVisibleData() {
+  if (currentSection === 'transactions') return window.refreshPtrTransactions?.(true);
   if (currentSection === 'aepa') return window.refreshAepaData?.({force:true});
   if (currentSection === 'fleet') return refreshFleets();
   if (currentSection === 'earnings') {

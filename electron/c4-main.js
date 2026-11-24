@@ -87,6 +87,34 @@ if (!app.requestSingleInstanceLock()) {
     }));
     handle('settings:get', () => settings.get());
     handle('settings:save', input => settings.save(input));
+    let ptrStore, ptrSync;
+    app.on('will-quit', () => ptrStore?.close());
+    handle('c4:ptr-transactions', async (sync = false) => {
+      const saved = await settings.get();
+      const profile = saved.playerProfiles?.[saved.faction];
+      if (!profile) return { error: 'Configure a player profile for this faction in Settings.' };
+      try {
+        const { createPtrSync } = await import('./c4-ptr-sync.mjs');
+        if (!ptrSync) {
+          const { PtrStore } = require('./c4-ptr-store');
+          ptrStore = new PtrStore(path.join(app.getPath('userData'), 'ptr32-onchain.sqlite'));
+          ptrSync = createPtrSync(ptrStore);
+        }
+        let imported = null;
+        let syncError = null;
+        if (sync === true) {
+          try { imported = await ptrSync.sync(profile); }
+          catch (error) { syncError = error.message; }
+        }
+        return { ...ptrSync.read(profile), imported, syncError };
+      } catch (error) {
+        return { error: error.message };
+      }
+    });
+    handle('c4:ptr-explorer', async signature => {
+      const { ptrExplorerUrl } = await import('./c4-ptr-sync.mjs');
+      return shell.openExternal(ptrExplorerUrl(signature));
+    });
     const {DatabaseSync}=require('node:sqlite');
     const snapshots=new DatabaseSync(path.join(app.getPath('userData'),'fleet-snapshots.sqlite'));
     snapshots.exec('CREATE TABLE IF NOT EXISTS snapshots(key TEXT PRIMARY KEY,value TEXT NOT NULL)');
