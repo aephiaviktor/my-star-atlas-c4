@@ -21,7 +21,7 @@ if (!app.requestSingleInstanceLock()) {
         return fn(...args);
       });
     }
-    const {createSessionCache}=require('./c4-session-cache');
+    const { createSessionCache } = require('./c4-session-cache');
     handle('app:get-profile-name', () => 'C4');
     handle('app:get-version', () => require('../package.json').version);
     const { createSecureSettingsStore } = require('./secure-settings');
@@ -70,13 +70,23 @@ if (!app.requestSingleInstanceLock()) {
       const { ptrExplorerUrl } = await import('./c4-ptr-sync.mjs');
       return shell.openExternal(ptrExplorerUrl(signature));
     });
-    const {DatabaseSync}=require('node:sqlite');
-    const snapshots=new DatabaseSync(path.join(app.getPath('userData'),'fleet-snapshots.sqlite'));
-    snapshots.exec('CREATE TABLE IF NOT EXISTS snapshots(key TEXT PRIMARY KEY,value TEXT NOT NULL)');
-    app.on('will-quit',()=>snapshots.close());
-    const fleetCache=createSessionCache({persist:(key,value)=>snapshots.prepare('INSERT OR REPLACE INTO snapshots VALUES(?,?)').run(key,JSON.stringify(value))});
+    const { DatabaseSync } = require('node:sqlite');
+    const { createFleetHistory } = require('./c4-fleet-history');
+    const { loadFleets } = require('./c4-fleets');
+    const snapshots = new DatabaseSync(path.join(app.getPath('userData'), 'fleet-snapshots.sqlite'));
+    const fleetHistory = createFleetHistory(snapshots);
+    app.on('will-quit', () => snapshots.close());
+    const fleetCache = createSessionCache();
     const readFleet = (faction, profile, force = false) => fleetCache.get(
-      JSON.stringify(['zink-ptr', faction, profile]), () => require('./c4-fleets').loadFleets(profile), force);
+      JSON.stringify(['zink-ptr', faction, profile]), async () => {
+        const result = await loadFleets(profile);
+        try {
+          fleetHistory.record(faction, profile, result);
+        } catch (error) {
+          console.warn('Unable to save C4 fleet observations:', error);
+        }
+        return result;
+      }, force);
     handle('fleet:list',async (options={})=>{
      const saved=await settings.get();
      const faction=['MUD','ONI','USTUR'].includes(options.faction)?options.faction:saved.faction;
@@ -127,7 +137,9 @@ if (!app.requestSingleInstanceLock()) {
           referencePromise ??= import('./c4-mining-geography.mjs').then(module => module.createMiningReferenceData())
             .catch(error => { referencePromise = undefined; throw error; });
           const references = await referencePromise;
-          const report = await require('./c4-mining-report').miningReport(history, kind, references);
+          const report = await require('./c4-mining-report').miningReport(history, kind, references, {
+            findFleetComposition: entry => fleetHistory.findBeforeTransfer(faction, profile, entry),
+          });
           report.identity = JSON.stringify(['zink-ptr', faction, profile]);
           if (syncWarning) report.warning = syncWarning + ' ' + report.warning;
           return report;

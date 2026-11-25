@@ -17,13 +17,25 @@
       const table = document.createElement('table');
       table.className = 'fleet-table';
       const header = table.createTHead().insertRow();
-      for (const label of ['UTC', 'Fleet', 'Resource', 'Quantity', 'Transaction']) cell(header, 'th', label);
+      for (const label of ['UTC', 'Fleet', 'Observed Ships', 'Observed Required Crew', 'Resource', 'Quantity', 'Transaction']) {
+        cell(header, 'th', label);
+      }
       const body = table.createTBody();
       for (const entry of entries) {
         const row = body.insertRow();
-        for (const value of [entry.time, `${entry.fleetName} · ${entry.fleetCreatedSlot}`, entry.resourceName, entry.quantity]) {
-          cell(row, 'td', value);
+        cell(row, 'td', entry.time);
+        cell(row, 'td', `${entry.fleetName} · ${entry.fleetCreatedSlot}`);
+        const composition = entry.fleetComposition;
+        const ships = composition?.ships.map(ship => `${BigInt(ship.amount).toLocaleString()}x ${ship.name}`).join(', ');
+        const shipsCell = cell(row, 'td', composition ? ships || 'No ships' : '—');
+        const crewCell = cell(row, 'td', composition?.requiredCrew == null ? '—' : BigInt(composition.requiredCrew).toLocaleString());
+        if (composition) {
+          const observed = `Observed ${composition.observedAt} (slot ${composition.observedSlot})`;
+          shipsCell.title = observed;
+          crewCell.title = observed;
         }
+        cell(row, 'td', entry.resourceName);
+        cell(row, 'td', entry.quantity);
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'subtab-button';

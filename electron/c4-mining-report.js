@@ -1,6 +1,8 @@
 const { accountMining } = require('./c4-mining-accounting');
 
-async function miningReport(history, kind, references, now = Date.now()) {
+async function miningReport(history, kind, references, {
+  now = Date.now(), findFleetComposition = () => null,
+} = {}) {
   const ledger = accountMining(history.transactions);
   const cutoff = now - 30 * 86400000;
   const available = ledger.entries.filter(e => e.kind === kind && Date.parse(e.time) >= cutoff && Date.parse(e.time) <= now);
@@ -10,7 +12,15 @@ async function miningReport(history, kind, references, now = Date.now()) {
   for (const entry of available) {
     totals.set(entry.resource, (totals.get(entry.resource) ?? 0n) + BigInt(entry.quantity));
   }
-  const entries = available.map(e => ({ ...e, resourceName: labels[e.resource] ?? `Resource #${e.resource}` }));
+  const compositions = new Map();
+  const entries = available.map(entry => {
+    const key = JSON.stringify([entry.fleetInstance, entry.slot]);
+    if (!compositions.has(key)) compositions.set(key, findFleetComposition(entry));
+    return {
+      ...entry, resourceName: labels[entry.resource] ?? `Resource #${entry.resource}`,
+      fleetComposition: compositions.get(key),
+    };
+  });
   const starbases = [...new Set(entries.map(e => e.starbase))].sort().map(value => ({ value, label: value }));
   const fleets = [...new Map(entries.map(e => [
     e.fleetInstance, { value: e.fleetInstance, label: `${e.fleetName} · ${e.fleetCreatedSlot}` },

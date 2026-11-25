@@ -9,7 +9,7 @@ function requiredCrew(ships) {
 }
 
 async function loadFleets(profile) {
-  const { createSageContext } = await import('@aephia/atlas-kit/client');
+  const { createSageContext, readMeta } = await import('@aephia/atlas-kit/client');
   const { getFleetsByOwner } = await import('@aephia/atlas-kit/fleets');
   const { createSolanaRpc, address } = await import('@solana/kit');
   const context = createSageContext({ cluster: 'zink-ptr', rpc: createSolanaRpc('https://testnet-rpc.z.ink') });
@@ -18,11 +18,15 @@ async function loadFleets(profile) {
     const checkedAt = new Date().toISOString();
     return {
       ok: true, source: 'z.ink', checkedAt,
-      fleets: fleets.map(fleet => ({
-        key: fleet.address, label: fleet.name, ownership: 'Owned',
-        activity: fleet.state.kind, requiredCrew: requiredCrew(fleet.ships), updatedAt: checkedAt,
-        ships: fleet.ships.map(ship => ({ name: ship.name, amount: ship.quantity.toString() })),
-      })).sort((a, b) => a.label.localeCompare(b.label)),
+      fleets: fleets.map(fleet => {
+        const observation = readMeta(fleet);
+        return {
+          key: fleet.address, label: fleet.name, ownership: 'Owned',
+          activity: fleet.state.kind, requiredCrew: requiredCrew(fleet.ships), updatedAt: checkedAt,
+          ships: fleet.ships.map(ship => ({ name: ship.name, amount: ship.quantity.toString() })),
+          observedSlot: observation?.commitment === 'finalized' ? Number(observation.slot) : null,
+        };
+      }).sort((a, b) => a.label.localeCompare(b.label)),
     };
   } finally {
     await context.dispose();

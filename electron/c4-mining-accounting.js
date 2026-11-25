@@ -104,7 +104,7 @@ function accountMining(transactions) {
       if (event.action !== 'TransferCargoToFleet') continue;
       for (const transfer of cargoTransfers(event)) {
         const item = {
-          ...transfer, id: movementId, signature: tx.signature, time: tx.time,
+          ...transfer, id: movementId, signature: tx.signature, time: tx.time, slot: tx.slot,
           fleetAddress: event.fleetAddress, fleetName: event.label,
           fleetInstance: instance, fleetCreatedSlot: event.createdSlot,
           starbase: accounts.systemAndStarbasePlayerSystem ?? 'Unknown starbase',
